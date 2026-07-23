@@ -1,0 +1,165 @@
+<p>
+  Once you have more than one agent working on a codebase, you have an organizational problem, not
+  a prompting problem. Who decides the design? Who is allowed to touch main? What happens when two
+  workers edit the same file? Who reviews, and does it mean anything if the reviewer is the same
+  model that wrote the code?
+</p>
+<p>
+  Tiknix answers these explicitly in <code>AGENT_ORCHESTRATION.md</code>, and the answers are
+  deliberately scaled to reality: a handful of subtasks per plan, three concurrent workers, one
+  instance. Not a thousand-agent swarm. The rules below are worth reading even if you never run the
+  pipeline, because they generalize.
+</p>
+
+<h2>The pipeline</h2>
+<p>
+  Three stages, three distinct roles: <code>PlanRunner</code> → <code>PlanExecutor</code> →
+  <code>AuditRunner</code>.
+</p>
+
+<h3>1. The planner owns design. Full stop.</h3>
+<p>
+  The planner is the <em>only</em> agent permitted to make architectural decisions. It runs on a
+  frontier model, it is grounded on the reuse inventory (see
+  <a href="/codebase-map-for-agents.html">Give Your AI Assistant a Map</a>), and it must classify
+  every capability as REUSE, EXTEND, or NEW before proposing any work.
+</p>
+<p>It then decomposes the work into subtasks, each carrying:</p>
+<ul>
+  <li><code>files</code> — what it will touch</li>
+  <li><code>reuses</code> — which existing primitives it builds on</li>
+  <li><code>depends_on</code> — which subtasks must land first</li>
+  <li><code>engine</code> — which agent should execute it</li>
+</ul>
+
+<h3>2. Workers implement the spec. They do not redesign it.</h3>
+<blockquote>
+  A subtask description is a spec, not a suggestion. Workers implement it; they do not re-decide
+  architecture. If a worker finds the spec wrong, it <strong>stops and reports</strong> — it does
+  not redesign.
+</blockquote>
+<p>
+  This constraint is the load-bearing one. A worker that improvises produces code that is locally
+  reasonable and globally incoherent — three subtasks each solving the same problem three
+  compatible-looking, incompatible ways. Stopping and reporting is cheap; silent divergence is
+  expensive and invisible until integration.
+</p>
+<p>The corollary is a diagnostic rule most teams could adopt directly:</p>
+<blockquote>
+  Spec clarity is the bottleneck, not execution. A subtask a cheap model can't execute without a
+  judgement call is an under-specified subtask — fix the <em>plan</em>, not the worker.
+</blockquote>
+<p>
+  That reframes worker failure as a planning defect. It is usually true, and it points the fix at
+  the place that also improves the next twenty tasks.
+</p>
+
+<h3>3. The auditor reviews with a different model. Deliberately.</h3>
+<p>
+  <code>AuditRunner</code> drives the running site with Playwright as ROOT, ADMIN, and MEMBER,
+  captures screenshots, and writes <code>audit.json</code>. And it carries a hard rule:
+</p>
+<blockquote>
+  The review model MUST differ from the worker model. Same-model review catches correlated errors
+  poorly.
+</blockquote>
+<p>
+  This is the single most transferable idea in the document. A model reviewing its own output
+  shares its blind spots — it will confidently approve the specific mistakes it is prone to making.
+  Decorrelation is what makes review informative rather than ceremonial. The minimum is a different
+  tier (workers on a mid model, auditor on a frontier one); the ideal is a different engine
+  entirely.
+</p>
+
+<h2>Frontier plans, cheap executes</h2>
+<p>
+  The cost model is explicit and, in the codebase's own framing, borrowed from measurements rather
+  than intuition: roughly 8× cost difference at equal quality between running everything on a
+  frontier model and splitting planning from execution.
+</p>
+<p>
+  So Tiknix tiers per engine — <code>planner_model</code>, <code>worker_model</code>,
+  <code>auditor_model</code>, <code>resolver_model</code> — declared in a registry
+  (<code>conf/aibuilder.ini</code> + <code>lib/EngineRegistry.php</code>) rather than hardcoded.
+  Planning defaults to a frontier tier but is <em>selectable</em>. Mechanical edits go to cheaper
+  engines. Members can override tiers for their own runs.
+</p>
+<p>The escalation rule is bounded:</p>
+<blockquote>
+  A task that fails auto-retry on a cheap engine may be re-queued <strong>once</strong> on a higher
+  tier before it is marked failed.
+</blockquote>
+<p>
+  One retry at a higher tier. Not infinite escalation — that is how a cost lever quietly becomes a
+  cost sink.
+</p>
+
+<h2>Coordination beats throughput</h2>
+<p>
+  Concurrency is capped at three. Not because more is technically impossible, but because merge
+  quality degrades faster than throughput improves. The supporting rules:
+</p>
+<ul>
+  <li><strong>Workers never run git.</strong> The orchestrator commits and merges. One writer to history.</li>
+  <li><strong>File-overlapping tasks must be chained</strong> via <code>depends_on</code>. Two agents editing one file concurrently is a conflict you chose to create.</li>
+  <li><strong>The megafile rule:</strong> the planner flags any task touching a file over ~2k lines and either splits the work or serializes every task that touches it.</li>
+  <li><strong>Only the plan may declare intentional breakage</strong> — "this task breaks X until task Y lands" is a planning decision recorded in the task, never a worker's improvisation.</li>
+</ul>
+
+<h2>Conflicts go to a neutral third party</h2>
+<p>
+  When branches do collide, neither author resolves it. A fresh agent — new session, no history
+  with either side, running on a different model tier — gets a resolution-only brief: keep both
+  intents, commit the merge, change nothing else.
+</p>
+<p>
+  The reasoning is the same as the review rule. An author resolving a conflict against their own
+  branch is not a neutral party; they will preserve their intent and quietly discard the other.
+</p>
+
+<h2>What they deliberately did not build</h2>
+<p>This section of the document may be the most valuable, because restraint rarely gets written down:</p>
+<ul>
+  <li>
+    <strong>No custom version control.</strong> Systems built for hundred-agent swarms solve a
+    problem that does not exist at three concurrent workers. Git worktrees plus orchestrator merges
+    are correct at this scale — building beyond that is named as an over-engineering trap, to
+    revisit only if concurrency grows tenfold.
+  </li>
+  <li>
+    <strong>No planner hierarchy.</strong> Planners spawning planners is the wrong depth for a
+    handful of subtasks. One planner per plan.
+  </li>
+</ul>
+<p>
+  Knowing which sophisticated thing <em>not</em> to build is a design skill. Both decisions are
+  recorded with the condition that would reverse them, which is what makes them decisions rather
+  than assumptions.
+</p>
+
+<h2>Run N+1 learns from run N</h2>
+<blockquote>
+  Codify surprises: when an audit failure or a repeated auto-retry reveals a convention gap, the
+  fix lands in CLAUDE.md or the brief builders — <strong>not</strong> in a one-off prompt.
+</blockquote>
+<p>
+  Every agent gets the same field guide: the project conventions, the MCP reuse tools, and a
+  deterministic expansion of the planner's <code>reuses</code> into exact routes, columns, and
+  method names. When something goes wrong, the correction goes into the guide, so it applies to
+  every future run rather than to one conversation that ends.
+</p>
+<p>
+  That is the difference between prompting and engineering. A one-off prompt fix helps the current
+  task. A guide fix compounds.
+</p>
+
+<div class="callout callout-honest">
+  <span class="callout-title">Honest notes</span>
+  <ul>
+    <li><strong>Not every engine runs natively yet.</strong> The registry lets the planner assign any engine per task, but an engine without a proven headless launcher falls back to the default and logs a warning. The status section of <code>AGENT_ORCHESTRATION.md</code> says so plainly — the field is "best-effort real," and the log reports the engine actually used, not the one requested.</li>
+    <li><strong>Review lenses are partly aspirational.</strong> The output-only Playwright lens is built. The codebase-diff lens and the transcript lens are planned. Treat the audit as one meaningful signal, not as full coverage.</li>
+    <li><strong>Decorrelation by model tier is weaker than by engine.</strong> Two tiers of the same model family share more blind spots than two different families do. The document acknowledges this and calls tier separation "the honest decorrelation lever" available today.</li>
+    <li><strong>This is orchestration, not autonomy.</strong> A human sets the goal, reviews the plan, and merges. It is a way to run a small, well-supervised team of agents — not a system you point at a backlog and walk away from.</li>
+    <li><strong>Three concurrent workers is a real ceiling.</strong> If your instinct is "why not thirty," read the restraint section again. The cap is a quality decision, and raising it means building merge infrastructure you do not currently need.</li>
+  </ul>
+</div>

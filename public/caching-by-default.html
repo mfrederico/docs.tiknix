@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caching You Don&#x27;t Have to Think About — Tiknix Docs</title>
+<meta name="description" content="A transparent query cache, a three-tier permission cache, and OPcache preloading — with an honest look at when each one earns its keep.">
+<link rel="icon" href="/img/tiknix.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Figtree:ital,wght@0,300..900;1,300..900&family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,100..900,0..100&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/docs.css">
+<script src="/assets/docs.js"></script>
+</head>
+<body>
+<div class="shell">
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+<aside class="sidebar" id="sidebar">
+  <a class="sidebar-brand" href="/index.html">
+    <span class="brand-logo"></span>
+    <span class="brand-word">tiknix</span>
+    <span class="brand-sub">docs</span>
+  </a>
+  <nav class="nav">
+    <div class="nav-heading">Index</div>
+    <a class="nav-link" href="/index.html"><span class="nav-num">&#9737;</span>All articles</a>
+    <div class="nav-heading">Foundations</div>
+    <a class="nav-link" href="/build-on-primitives.html"><span class="nav-num">01</span>Start From Primitives, Not From Scratch</a>
+    <a class="nav-link" href="/php-sqlite-substrate.html"><span class="nav-num">02</span>Why PHP and SQLite Are a Serious Choice in 2026</a>
+    <a class="nav-link" href="/membership-and-settings.html"><span class="nav-num">03</span>The Members Table Is the Spine</a>
+    <a class="nav-link" href="/convention-routing.html"><span class="nav-num">04</span>Convention-Based Routing: A URL Is a Method Name</a>
+    <a class="nav-link" href="/data-without-migrations.html"><span class="nav-num">05</span>Modeling Data Without a Migration Backlog</a>
+    <a class="nav-link" href="/bootstrap-design-primitive.html"><span class="nav-num">06</span>Bootstrap as a Design Primitive</a>
+    <div class="nav-heading">Security &amp; Access</div>
+    <a class="nav-link" href="/authentication-included.html"><span class="nav-num">07</span>The Login You Don&#x27;t Have to Write</a>
+    <a class="nav-link" href="/two-factor-included.html"><span class="nav-num">08</span>Two-Factor Authentication as a Config Switch</a>
+    <a class="nav-link" href="/permissions-as-data.html"><span class="nav-num">09</span>Permissions as Data, Not If-Statements</a>
+    <a class="nav-link" href="/teams-and-ownership.html"><span class="nav-num">10</span>Teams, Ownership, and Sharing Work Safely</a>
+    <div class="nav-heading">Building with AI</div>
+    <a class="nav-link" href="/codebase-map-for-agents.html"><span class="nav-num">11</span>Give Your AI Assistant a Map, Not a Flashlight</a>
+    <a class="nav-link" href="/mcp-gateway.html"><span class="nav-num">12</span>MCP as a Primitive: One Endpoint for Every Agent</a>
+    <a class="nav-link" href="/agent-orchestration.html"><span class="nav-num">13</span>Plan With the Expensive Model, Execute With the Cheap One</a>
+    <a class="nav-link" href="/pipelines.html"><span class="nav-num">14</span>Pipelines: Automation That Ships With the App</a>
+    <a class="nav-link" href="/scaffolding-and-reuse.html"><span class="nav-num">15</span>Scaffolding Is a Reading Exercise</a>
+    <div class="nav-heading">Operations</div>
+    <a class="nav-link" href="/data-integration.html"><span class="nav-num">16</span>Five Ways Data Crosses the Boundary</a>
+    <a class="nav-link" href="/connections-and-broker-keys.html"><span class="nav-num">17</span>Third-Party Credentials Without Sprawl</a>
+    <a class="nav-link active" href="/caching-by-default.html"><span class="nav-num">18</span>Caching You Don&#x27;t Have to Think About</a>
+    <a class="nav-link" href="/feature-flags-and-sidecars.html"><span class="nav-num">19</span>Growing Without Bloating the Core</a>
+    <a class="nav-link" href="/production-checklist.html"><span class="nav-num">20</span>From Localhost to Production: The Honest Checklist</a>
+  </nav>
+  <div class="sidebar-foot">
+    Written against the Tiknix source. <a href="/index.html">All articles</a>
+  </div>
+</aside>
+<div class="main">
+  <header class="topbar">
+    <button class="btn-icon menu-toggle" id="menuToggle" type="button" aria-label="Open menu">&#9776;</button>
+    <div class="topbar-title">
+      <span class="eyebrow">Operations</span>
+      <strong>Caching You Don&#x27;t Have to Think About</strong>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-icon" id="themeToggle" type="button" aria-label="Toggle theme"><span id="themeIcon">&#9728;</span></button>
+    </div>
+  </header>
+  <main class="content">
+    <article class="narrow">
+      <header class="article-header">
+        <div class="meta">
+          <span class="chip chip-ops">Operations</span>
+          <span class="eyebrow">Article 18 of 20</span>
+          <span class="eyebrow">9 min read</span>
+        </div>
+        <h1>Caching You Don&#x27;t Have to Think About</h1>
+        <p class="lede">A transparent query cache, a three-tier permission cache, and OPcache preloading — with an honest look at when each one earns its keep.</p>
+      </header>
+      <div class="article-body">
+<p>
+  Most applications add caching after something gets slow, which means it arrives as a retrofit:
+  scattered <code>cache_get()</code> calls, ad-hoc keys, a bug where stale data appears on one page
+  and not another, and an invalidation strategy that is really a TTL and a hope.
+</p>
+<p>
+  Tiknix caches at the layers where invalidation can be reasoned about generically — the database
+  adapter and the permission lookup — so that application code does not participate at all.
+</p>
+
+<h2>Layer 1: transparent query cache</h2>
+<p>
+  <code>lib/CachedDatabaseAdapter.php</code> is a drop-in replacement for RedBeanPHP's database
+  adapter. It caches SELECT results and invalidates them on writes. Your controllers do not know it
+  is there:
+</p>
+<pre><code>[cache]
+enabled         = true
+query_cache     = true
+query_cache_ttl = 60</code></pre>
+<p>Two implementation choices carry the design:</p>
+<h3>Table-version invalidation</h3>
+<p>
+  Rather than tracking which cached rows a write affects — which is intractable in the general case
+  — the adapter tracks a version number per table. An INSERT, UPDATE, or DELETE bumps the version
+  of the tables involved, and every cached query that referenced those tables is invalidated in one
+  move. JOIN queries are tracked across all their tables, so a write to any participating table
+  correctly invalidates the joined result.
+</p>
+<p>
+  It is coarse — a write to one row invalidates cached queries over that whole table — and that
+  coarseness is exactly why it is <em>correct</em>. Precise invalidation is where cache bugs live.
+  Bulk invalidation trades some hit rate for the guarantee that you never serve data a write
+  should have removed.
+</p>
+<h3>Namespaced by site</h3>
+<pre><code>$siteId = md5(__DIR__ . '_' . ($_SERVER['HTTP_HOST'] ?? 'cli'));</code></pre>
+<p>
+  The cache prefix is derived from the installation directory and hostname, so two Tiknix instances
+  sharing an APCu segment cannot see each other's cached rows. That matters directly here: the AI
+  Builder provisions many instances on one host, and cross-tenant cache bleed would be a serious
+  data leak rather than a performance bug.
+</p>
+
+<h2>Layer 2: permission cache</h2>
+<p>
+  Every request performs at least one permission check, so <code>lib/PermissionCache.php</code>
+  layers three tiers:
+</p>
+<ol>
+  <li><strong>Process memory</strong> — a static array; after the first check in a request, the rest are free.</li>
+  <li><strong>APCu</strong> — shared across requests on the host; the common path avoids the database entirely.</li>
+  <li><strong>Database</strong> — cold-start only, then promoted upward.</li>
+</ol>
+<p>
+  The cache is <em>versioned</em>, which is the part that makes it operationally pleasant: changing
+  permissions bumps a version, and running processes pick up the change on their next check. No
+  PHP-FPM restart, no deploy, no stale-authorization window. If you edit
+  <code>authcontrol</code> rows directly:
+</p>
+<pre><code>php scripts/resetcache.php</code></pre>
+
+<h2>Layer 3: OPcache preloading</h2>
+<p>
+  PHP's OPcache stores compiled bytecode so each request skips parsing. Preloading goes further,
+  loading framework files into memory at server start so they are resident before the first request
+  arrives. The preload list is configurable — worth pointing at your hot controllers and libraries,
+  not just the framework's.
+</p>
+
+<h2>The numbers, and how to read them</h2>
+<p>
+  The project reports roughly <strong>9.4× faster queries</strong> with a ~99.9% hit rate for the
+  query cache, and about <strong>99.7% faster</strong> permission checks at ~175,000 checks/second.
+  There is an admin panel at <code>/admin/cache</code> showing live hit rates, memory usage per
+  tier, cached query counts, APCu and OPcache status, plus one-click clear and warm.
+</p>
+<p>
+  Read those numbers as what they are: measurements from a specific workload on specific hardware.
+  A 99.9% hit rate is characteristic of a read-heavy application with a warm cache — which is what
+  an admin-panel-driven app looks like. A write-heavy workload will invalidate constantly and see
+  much less benefit. The right move is to look at the dashboard on <em>your</em> traffic rather than
+  to inherit anyone's benchmark.
+</p>
+<p>
+  Having the dashboard is the more durable point. Caching you cannot observe is caching you cannot
+  debug, and "is the cache actually helping?" should be a question with an answer on a screen.
+</p>
+
+<h2>Why cache at these layers specifically</h2>
+<p>
+  Application-level caching requires the developer to reason about invalidation at every call site,
+  and that reasoning is where it goes wrong — someone caches a user's permissions in a controller,
+  someone else updates permissions in an admin screen, and nothing connects the two.
+</p>
+<p>
+  The database adapter and the permission lookup are chokepoints. <em>Every</em> query goes through
+  one; <em>every</em> authorization check goes through the other. Caching at a chokepoint means the
+  invalidation logic exists once, can be reviewed once, and applies to code written later by people
+  who never think about it — including agents.
+</p>
+<p>
+  This is the same principle as enforcing permissions in the dispatcher rather than in each
+  controller. <strong>Put the guarantee where the traffic funnels, and correctness stops depending
+  on discipline.</strong>
+</p>
+
+<h2>Getting it running</h2>
+<pre><code>sudo apt-get install php8.5-apcu
+sudo systemctl restart php8.5-fpm
+
+# optional: enable for CLI so you can test cache behavior from scripts
+echo "apc.enable_cli=1" | sudo tee -a /etc/php/8.5/cli/conf.d/20-apcu.ini</code></pre>
+<p>Without APCu, the system degrades to process-memory caching and the database. It works; it is just slower.</p>
+
+<div class="callout callout-honest">
+  <span class="callout-title">Honest notes</span>
+  <ul>
+    <li><strong>APCu is per-server.</strong> It is shared memory on one machine, not a distributed cache. Across multiple app servers each has its own, which is fine for permissions (versioned, self-correcting) and worth thinking about for query results. Multi-server deployments want Redis or Memcached at this layer.</li>
+    <li><strong>Table-version invalidation is coarse.</strong> On a write-heavy table, cached queries are invalidated constantly and the hit rate collapses. That is the cache doing its job correctly, not failing — but do not expect the headline numbers on a write-heavy workload.</li>
+    <li><strong>A TTL is still a staleness window.</strong> With <code>query_cache_ttl = 60</code>, data changed by something <em>outside</em> the application — a direct SQL edit, another service writing the same database — can be up to a minute stale, because no invalidation event fired.</li>
+    <li><strong>Caching hides N+1 queries.</strong> A loop issuing hundreds of cached queries looks fast in development and falls over the moment the cache is cold or the data changes. Profile with the cache off occasionally.</li>
+    <li><strong>Preloading pins code at startup.</strong> Preloaded files are the ones loaded at server start, so deploys need a reload for those files to change. Expected behavior, surprising the first time it bites you.</li>
+    <li><strong>Cache before correctness is a mistake.</strong> These layers are transparent and safe by construction. Any caching <em>you</em> add on top is yours to invalidate — hold it to the same standard.</li>
+  </ul>
+</div>
+      </div>
+      <nav class="article-nav">
+        <a class="prev" href="/connections-and-broker-keys.html"><span class="dir">&#8592; Previous</span><span class="ttl">Third-Party Credentials Without Sprawl</span></a><a class="next" href="/feature-flags-and-sidecars.html"><span class="dir">Next &#8594;</span><span class="ttl">Growing Without Bloating the Core</span></a>
+      </nav>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="brand-logo footer-logo"></span>
+        <div>
+          <div class="footer-word">tiknix</div>
+          <div class="footer-tag">Build on primitives that already work</div>
+        </div>
+      </div>
+      <nav class="footer-links">
+        <a href="https://tiknix.com">Homepage</a>
+        <a href="https://github.com/mfrederico/tiknix">GitHub</a>
+        <a href="https://github.com/mfrederico/tiknix-tutorials">Tutorials</a>
+        <a href="/index.html">All articles</a>
+      </nav>
+    </div>
+    <div class="footer-fine">
+      Documentation written against the Tiknix source. Tiknix is released under the MIT License.
+    </div>
+  </footer>
+</div>
+</div>
+</body>
+</html>

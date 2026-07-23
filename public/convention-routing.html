@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Convention-Based Routing: A URL Is a Method Name — Tiknix Docs</title>
+<meta name="description" content="How Tiknix maps /member/profile to Member-&gt;profile() with no route table — and why that makes a codebase legible to humans and agents alike.">
+<link rel="icon" href="/img/tiknix.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Figtree:ital,wght@0,300..900;1,300..900&family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,100..900,0..100&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/docs.css">
+<script src="/assets/docs.js"></script>
+</head>
+<body>
+<div class="shell">
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+<aside class="sidebar" id="sidebar">
+  <a class="sidebar-brand" href="/index.html">
+    <span class="brand-logo"></span>
+    <span class="brand-word">tiknix</span>
+    <span class="brand-sub">docs</span>
+  </a>
+  <nav class="nav">
+    <div class="nav-heading">Index</div>
+    <a class="nav-link" href="/index.html"><span class="nav-num">&#9737;</span>All articles</a>
+    <div class="nav-heading">Foundations</div>
+    <a class="nav-link" href="/build-on-primitives.html"><span class="nav-num">01</span>Start From Primitives, Not From Scratch</a>
+    <a class="nav-link" href="/php-sqlite-substrate.html"><span class="nav-num">02</span>Why PHP and SQLite Are a Serious Choice in 2026</a>
+    <a class="nav-link" href="/membership-and-settings.html"><span class="nav-num">03</span>The Members Table Is the Spine</a>
+    <a class="nav-link active" href="/convention-routing.html"><span class="nav-num">04</span>Convention-Based Routing: A URL Is a Method Name</a>
+    <a class="nav-link" href="/data-without-migrations.html"><span class="nav-num">05</span>Modeling Data Without a Migration Backlog</a>
+    <a class="nav-link" href="/bootstrap-design-primitive.html"><span class="nav-num">06</span>Bootstrap as a Design Primitive</a>
+    <div class="nav-heading">Security &amp; Access</div>
+    <a class="nav-link" href="/authentication-included.html"><span class="nav-num">07</span>The Login You Don&#x27;t Have to Write</a>
+    <a class="nav-link" href="/two-factor-included.html"><span class="nav-num">08</span>Two-Factor Authentication as a Config Switch</a>
+    <a class="nav-link" href="/permissions-as-data.html"><span class="nav-num">09</span>Permissions as Data, Not If-Statements</a>
+    <a class="nav-link" href="/teams-and-ownership.html"><span class="nav-num">10</span>Teams, Ownership, and Sharing Work Safely</a>
+    <div class="nav-heading">Building with AI</div>
+    <a class="nav-link" href="/codebase-map-for-agents.html"><span class="nav-num">11</span>Give Your AI Assistant a Map, Not a Flashlight</a>
+    <a class="nav-link" href="/mcp-gateway.html"><span class="nav-num">12</span>MCP as a Primitive: One Endpoint for Every Agent</a>
+    <a class="nav-link" href="/agent-orchestration.html"><span class="nav-num">13</span>Plan With the Expensive Model, Execute With the Cheap One</a>
+    <a class="nav-link" href="/pipelines.html"><span class="nav-num">14</span>Pipelines: Automation That Ships With the App</a>
+    <a class="nav-link" href="/scaffolding-and-reuse.html"><span class="nav-num">15</span>Scaffolding Is a Reading Exercise</a>
+    <div class="nav-heading">Operations</div>
+    <a class="nav-link" href="/data-integration.html"><span class="nav-num">16</span>Five Ways Data Crosses the Boundary</a>
+    <a class="nav-link" href="/connections-and-broker-keys.html"><span class="nav-num">17</span>Third-Party Credentials Without Sprawl</a>
+    <a class="nav-link" href="/caching-by-default.html"><span class="nav-num">18</span>Caching You Don&#x27;t Have to Think About</a>
+    <a class="nav-link" href="/feature-flags-and-sidecars.html"><span class="nav-num">19</span>Growing Without Bloating the Core</a>
+    <a class="nav-link" href="/production-checklist.html"><span class="nav-num">20</span>From Localhost to Production: The Honest Checklist</a>
+  </nav>
+  <div class="sidebar-foot">
+    Written against the Tiknix source. <a href="/index.html">All articles</a>
+  </div>
+</aside>
+<div class="main">
+  <header class="topbar">
+    <button class="btn-icon menu-toggle" id="menuToggle" type="button" aria-label="Open menu">&#9776;</button>
+    <div class="topbar-title">
+      <span class="eyebrow">Foundations</span>
+      <strong>Convention-Based Routing: A URL Is a Method Name</strong>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-icon" id="themeToggle" type="button" aria-label="Toggle theme"><span id="themeIcon">&#9728;</span></button>
+    </div>
+  </header>
+  <main class="content">
+    <article class="narrow">
+      <header class="article-header">
+        <div class="meta">
+          <span class="chip chip-foundations">Foundations</span>
+          <span class="eyebrow">Article 04 of 20</span>
+          <span class="eyebrow">7 min read</span>
+        </div>
+        <h1>Convention-Based Routing: A URL Is a Method Name</h1>
+        <p class="lede">How Tiknix maps /member/profile to Member-&gt;profile() with no route table — and why that makes a codebase legible to humans and agents alike.</p>
+      </header>
+      <div class="article-body">
+<p>
+  Most frameworks ask you to maintain a route table: a file that maps URL patterns to handlers,
+  which you edit every time you add a page. It is a small tax, paid forever, and it drifts — the
+  route file says one thing, the controller says another, and the truth is whichever one ran last.
+</p>
+<p>
+  Tiknix takes the other approach. There is one route registration in the entire application, and
+  it looks like this:
+</p>
+<pre><code>// routes/default.php
+Flight::defaultRoute();</code></pre>
+<p>That single line handles every URL in the app.</p>
+
+<h2>The rule</h2>
+<p>The URL shape is <code>/controller/method/operation/id</code>, and each segment is optional:</p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>URL</th><th>Resolves to</th></tr></thead>
+  <tbody>
+    <tr><td><code>/</code></td><td><code>Index-&gt;index()</code></td></tr>
+    <tr><td><code>/dashboard</code></td><td><code>Dashboard-&gt;index()</code></td></tr>
+    <tr><td><code>/auth/login</code></td><td><code>Auth-&gt;login()</code></td></tr>
+    <tr><td><code>/member/profile</code></td><td><code>Member-&gt;profile()</code></td></tr>
+    <tr><td><code>/blog/post/edit/123</code></td><td><code>Blog-&gt;post()</code> with operation <code>edit</code>, id <code>123</code></td></tr>
+  </tbody>
+</table>
+</div>
+<p>
+  Missing segments default to <code>index</code>. The controller class is the capitalized first
+  segment, resolved inside the app namespace. The trailing segments arrive as a parsed
+  <code>operation</code> object rather than as positional arguments:
+</p>
+<pre><code>public function post($params) {
+    $action = $params['operation']->name;   // 'edit'
+    $id     = $params['operation']->type;   // '123'
+}</code></pre>
+<p>
+  The segments arrive by <em>name</em>, not by numeric position — there is no
+  <code>$params[0]</code>/<code>$params[1]</code> array of path parts. You get an
+  <code>operation</code> object (<code>->name</code> is the segment after the method,
+  <code>->type</code> is the one after that) and a <code>route</code> string holding anything
+  beyond those. The base controller wraps the two most common reads as helpers:
+</p>
+<pre><code>$id   = $this->opId();     // /product/edit/5  -> '5'
+$type = $this->opType();   // the segment after opId
+// $params['route'] holds any remaining path beyond opId, as a string.</code></pre>
+<p>
+  Note that <code>$this->getParam('x')</code> is a different thing: it reads POST body, query
+  string, and <code>$_REQUEST</code> — the request's <em>data</em>, not the URL's path segments.
+  Path segments come from <code>operation</code>/<code>route</code>; form and query values come from
+  <code>getParam()</code>.
+</p>
+<p>
+  Creating a route means creating a method. Deleting a route means deleting a method. There is no
+  second place for the two to disagree.
+</p>
+
+<h2>What the dispatcher actually enforces</h2>
+<p>
+  The convention is simple, but the dispatch path is not naive. Before Tiknix calls anything, it
+  runs four checks in order — worth knowing precisely, because the security of the whole app rests
+  on them.
+</p>
+<ol>
+  <li>
+    <strong>Permission first, before instantiation.</strong> <code>Flight::permissionFor()</code>
+    consults the <code>authcontrol</code> table (through the permission cache) using the current
+    member's level. A denied request never constructs the controller. See
+    <a href="/permissions-as-data.html">Permissions as Data</a> for how those rows work.
+  </li>
+  <li>
+    <strong>The class must exist.</strong> Otherwise: 404, logged.
+  </li>
+  <li>
+    <strong>The class file must live under <code>controls/</code>.</strong> Only real controllers
+    are routable — the dispatcher checks the resolved file's path and refuses anything outside the
+    controllers directory. It is a directory check rather than an allowlist, so new controllers work
+    automatically with no list to maintain, and internal libraries stay unreachable from a URL.
+  </li>
+  <li>
+    <strong>The method must exist and be public.</strong> Private and protected methods are not
+    reachable from a URL, which is how you write controller helpers safely.
+  </li>
+</ol>
+<p>
+  If the method does not exist but the controller defines <code>_fallback()</code>, the request is
+  handed there instead — that is the hook for pretty URLs like <code>/products/blue-widget</code>,
+  where the second segment is data rather than a method name.
+</p>
+<p>
+  Anything that throws inside a controller is caught, logged, optionally reported, and turned into
+  a 404 rather than a stack trace on a user's screen.
+</p>
+
+<h2>Why this is unusually good for agent-written code</h2>
+<p>
+  Convention routing removes an entire category of coordination. When an AI assistant adds a
+  feature, it does not have to find the route file, infer its format, insert an entry in the right
+  place, and keep it consistent with a controller in another directory. It writes one method in
+  one file and the URL exists.
+</p>
+<p>
+  It also makes the codebase <em>self-describing</em>. You do not need to read a route table to
+  know what the app exposes; the list of public methods across <code>controls/</code> <strong>is</strong>
+  the list of endpoints. Tiknix's own introspection tooling relies on exactly that — the
+  <code>describe</code> MCP tool reports a controller's routes and permission levels by reading the
+  class, because the class is the source of truth. (See
+  <a href="/codebase-map-for-agents.html">Give Your AI Assistant a Map</a>.)
+</p>
+
+<h2>The same controllers run on the command line</h2>
+<p>
+  Because a route is just a method, cron jobs and CLI scripts do not need a parallel command
+  framework. <code>lib/CliHandler.php</code> detects CLI execution and dispatches to the same
+  controllers:
+</p>
+<pre><code>php public/index.php --control=cleanup --method=daily --member=1 --cron</code></pre>
+<p>
+  One implementation, two entry points. A method you can call from a URL you can also schedule,
+  and it behaves identically because it <em>is</em> identical.
+</p>
+
+<h2>When you want a real route</h2>
+<p>
+  Convention routing does not lock out explicit routes. <a href="https://flightphp.com/">FlightPHP</a>
+  is underneath, so anything it
+  supports still works — add a file in <code>routes/</code> for versioned APIs, webhooks with
+  fixed paths, or patterns the convention cannot express:
+</p>
+<pre><code>// routes/api.php
+Flight::route('/api/v1/users',      ['Api', 'users']);
+Flight::route('/api/v1/posts/@id',  ['Api', 'post']);</code></pre>
+<p>
+  Use this deliberately and sparingly. Every explicit route is a place where the URL and the code
+  can drift apart again — which is the tax the convention was designed to remove.
+</p>
+
+<div class="callout callout-tip">
+  <span class="callout-title">Practical tip</span>
+  <p>
+    Name methods for the URL you want, not for the code that's inside them. <code>publicprofile()</code>
+    is a fine method name if <code>/member/publicprofile</code> is the URL you want users to see.
+    In this framework, method naming <em>is</em> URL design.
+  </p>
+</div>
+
+<div class="callout callout-honest">
+  <span class="callout-title">Honest notes</span>
+  <ul>
+    <li><strong>Every public method is a potential endpoint.</strong> That is the deal. A public helper on a controller is reachable at a URL, so helpers belong in <code>private</code>/<code>protected</code> methods or in <code>lib/</code>. Treat "should this be public?" as a security question, not a style question.</li>
+    <li><strong>PHP method names are case-insensitive.</strong> A convention of "uppercase methods aren't routable" is not enforced by the language — <code>/example/processinternal</code> will reach <code>ProcessInternal()</code>. Use visibility, not capitalization, to keep something off the web.</li>
+    <li><strong>A route with no permission row defaults to public — and this is not just a build-mode thing.</strong> It is worth being exact, because it is easy to assume the open behavior only applies while <code>build_mode</code> is on. It does not. With build mode <em>on</em>, an unknown route auto-creates a permission row and allows the request. With build mode <em>off</em>, an unknown route still resolves to <code>PUBLIC</code> (the permission check falls through to <code>level &lt;= 101</code>, which every visitor satisfies). Either way, a missing row is an open door, not a locked one. Audit your <code>authcontrol</code> rows before you ship, and read <a href="/production-checklist.html">the checklist</a>.</li>
+    <li><strong>URLs and refactoring are coupled.</strong> Renaming a controller or a method changes public URLs and orphans its permission rows. Plan renames like the breaking changes they are, and leave a redirect if the URL was ever shared.</li>
+    <li><strong>Deep hierarchies don't fit.</strong> The convention is two levels plus two data segments. Genuinely nested resources (<code>/teams/7/projects/3/tasks</code>) want an explicit route or a <code>_fallback()</code>.</li>
+  </ul>
+</div>
+      </div>
+      <nav class="article-nav">
+        <a class="prev" href="/membership-and-settings.html"><span class="dir">&#8592; Previous</span><span class="ttl">The Members Table Is the Spine</span></a><a class="next" href="/data-without-migrations.html"><span class="dir">Next &#8594;</span><span class="ttl">Modeling Data Without a Migration Backlog</span></a>
+      </nav>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="brand-logo footer-logo"></span>
+        <div>
+          <div class="footer-word">tiknix</div>
+          <div class="footer-tag">Build on primitives that already work</div>
+        </div>
+      </div>
+      <nav class="footer-links">
+        <a href="https://tiknix.com">Homepage</a>
+        <a href="https://github.com/mfrederico/tiknix">GitHub</a>
+        <a href="https://github.com/mfrederico/tiknix-tutorials">Tutorials</a>
+        <a href="/index.html">All articles</a>
+      </nav>
+    </div>
+    <div class="footer-fine">
+      Documentation written against the Tiknix source. Tiknix is released under the MIT License.
+    </div>
+  </footer>
+</div>
+</div>
+</body>
+</html>

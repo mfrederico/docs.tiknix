@@ -1,0 +1,130 @@
+<p>
+  Route permissions answer "may this person open this page?" They cannot answer "may this person
+  open <em>this record</em>?" That second question is where most real access-control bugs live, and
+  it is where a lot of applications quietly leak data — not because anyone forgot to check
+  authentication, but because a query said <code>WHERE id = ?</code> when it should have said
+  <code>WHERE id = ? AND member_id = ?</code>.
+</p>
+<p>
+  Tiknix answers it with a single service, <code>lib/TaskAccessControl.php</code>, that every
+  caller asks before showing or acting on a shared resource.
+</p>
+
+<h2>The ownership model</h2>
+<p>Every task-like resource is in one of two states:</p>
+<ul>
+  <li><strong>Personal</strong> (<code>team_id</code> is null) — belongs to one member.</li>
+  <li><strong>Team</strong> (<code>team_id</code> is set) — belongs to a team, and access follows the asker's role in that team.</li>
+</ul>
+<p>Team membership carries one of four roles:</p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Role</th><th>Can do</th></tr></thead>
+  <tbody>
+    <tr><td><code>owner</code></td><td>Everything, including deleting the team</td></tr>
+    <tr><td><code>admin</code></td><td>Manage members; run, edit, and delete tasks</td></tr>
+    <tr><td><code>member</code></td><td>Create, edit, and run tasks — the default</td></tr>
+    <tr><td><code>viewer</code></td><td>Read-only access to team tasks</td></tr>
+  </tbody>
+</table>
+</div>
+<p>
+  Four roles is a deliberate number. It is enough to express the distinctions teams actually make
+  — someone who runs things, someone who only watches, someone who administers — without becoming
+  a permission matrix nobody configures correctly.
+</p>
+
+<h2>One service, asked everywhere</h2>
+<p>
+  The API is a set of verb methods, each taking the asking member and the resource:
+</p>
+<pre><code>$access = new \app\TaskAccessControl();
+
+if (!$access->canView($memberId, $task))   { /* 403 */ }
+if (!$access->canEdit($memberId, $task))   { /* 403 */ }
+if (!$access->canRun($memberId, $task))    { /* 403 */ }
+if (!$access->canDelete($memberId, $task)) { /* 403 */ }
+$access->canComment($memberId, $task);   // = canView</code></pre>
+<p>
+  The structural benefit is concentration. Ownership logic exists in exactly one file, so a change
+  to the sharing rules is a change to that file — not an archaeology expedition through every
+  controller that touches a task. And a reviewer auditing "who can delete things?" reads one
+  method.
+</p>
+<p>Each method follows the same shape, and it is worth reading once:</p>
+<pre><code>public function canDelete(int $memberId, $task): bool {
+    $task = $this->toArray($task);
+
+    // Personal task: only the owner. No team fallback, no admin override.
+    if (empty($task['team_id'])) {
+        return (int)$task['member_id'] === $memberId;
+    }
+
+    // A task's creator can always delete their own task.
+    if ((int)$task['member_id'] === $memberId) {
+        return true;
+    }
+
+    // Otherwise it depends on the asker's role in the owning team.
+    return $this->hasTeamPermission((int)$task['team_id'], $memberId, 'can_delete_tasks');
+}</code></pre>
+<p>
+  Note that <code>canDelete</code> is stricter than <code>canView</code> for personal resources.
+  Viewing allows a teammate-on-a-shared-instance path; deleting does not. Destructive operations
+  get the narrower rule, which is the correct default and easy to forget when checks are scattered.
+</p>
+
+<h2>Sharing without moving things</h2>
+<p>
+  There is a third path in <code>canView</code>: a personal task on an instance that has been
+  shared with a team is visible to that team's members. It is implemented as one explicit query
+  joining the instance-to-team link table.
+</p>
+<p>
+  This exists because of how collaboration actually happens. Someone creates a personal task on a
+  workspace the team shares. A teammate needs to see what it did. Without this rule, the answer is
+  "reassign the task to the team," which is friction at exactly the wrong moment. With it, sharing
+  the <em>workspace</em> shares visibility into work on that workspace — a coarser but more
+  intuitive unit.
+</p>
+<p>
+  It is also a deliberate widening of access, which is why it belongs in a named private method
+  (<code>isSharedInstanceTask</code>) with a comment explaining the intent, rather than as an extra
+  clause in an <code>||</code> chain. When you widen access, make the widening legible.
+</p>
+
+<h2>Teams as a first-class object</h2>
+<p>
+  <code>controls/Teams.php</code> handles creation, invitations, and membership. Invitations go out
+  through <code>Mailer::sendTeamInvite()</code> with an accept link, and the join-by-token route is
+  the one team operation that does not require an existing login — because the person accepting may
+  not have an account yet.
+</p>
+<p>That is the correct exception, and it is a single, identifiable one rather than a general loosening.</p>
+
+<h2>The pattern to copy</h2>
+<p>
+  If you add resources of your own — documents, invoices, projects — the shape to reuse is this:
+</p>
+<ol>
+  <li>Give the resource a <code>member_id</code> and a nullable <code>team_id</code>.</li>
+  <li>Write one access service with <code>can*</code> methods, one per verb.</li>
+  <li>Call it in <em>every</em> controller method that reads or writes the resource, including list views.</li>
+  <li>Never trust an id from the request without an ownership check — an id in a URL is a user-supplied value.</li>
+</ol>
+<p>
+  The last point is the one that bites. Route permissions confirm the person may use the feature.
+  They say nothing about which rows they may use it on. <code>/projects/edit/42</code> passing the
+  permission check means "this member may edit projects," not "this member may edit project 42."
+</p>
+
+<div class="callout callout-honest">
+  <span class="callout-title">Honest notes</span>
+  <ul>
+    <li><strong>The service is scoped to tasks and instances.</strong> It is named <code>TaskAccessControl</code> for a reason. It is a pattern to copy for your own resources, not a generic ACL engine you can point at any table.</li>
+    <li><strong>Checks are opt-in.</strong> Unlike route permissions — enforced by the dispatcher — record-level checks only run where a developer called them. A controller method that skips the call has no safety net. Code review for new controllers should specifically look for this.</li>
+    <li><strong>Four roles will eventually be three too few.</strong> "Can run but not delete" or "billing-only" needs a fifth role or a per-capability grant. The <code>hasTeamPermission($teamId, $memberId, 'can_x')</code> indirection is where you'd add it — the capability names already exist.</li>
+    <li><strong>Shared-instance visibility is broad by design.</strong> A teammate can see personal tasks on a shared workspace. That is intentional collaboration, but tell your users about it — "personal" implying "private" is a reasonable assumption for them to make.</li>
+    <li><strong>List views need the same filter.</strong> A per-record check on the detail page is not enough if the index query returns rows the asker shouldn't see. Filter the query, then check the record.</li>
+  </ul>
+</div>

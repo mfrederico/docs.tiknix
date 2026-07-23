@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Modeling Data Without a Migration Backlog — Tiknix Docs</title>
+<meta name="description" content="RedBeanPHP&#x27;s fluid schema lets the database follow your code while you explore, then freezes for production. What that buys and what it costs.">
+<link rel="icon" href="/img/tiknix.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Figtree:ital,wght@0,300..900;1,300..900&family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,100..900,0..100&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/docs.css">
+<script src="/assets/docs.js"></script>
+</head>
+<body>
+<div class="shell">
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+<aside class="sidebar" id="sidebar">
+  <a class="sidebar-brand" href="/index.html">
+    <span class="brand-logo"></span>
+    <span class="brand-word">tiknix</span>
+    <span class="brand-sub">docs</span>
+  </a>
+  <nav class="nav">
+    <div class="nav-heading">Index</div>
+    <a class="nav-link" href="/index.html"><span class="nav-num">&#9737;</span>All articles</a>
+    <div class="nav-heading">Foundations</div>
+    <a class="nav-link" href="/build-on-primitives.html"><span class="nav-num">01</span>Start From Primitives, Not From Scratch</a>
+    <a class="nav-link" href="/php-sqlite-substrate.html"><span class="nav-num">02</span>Why PHP and SQLite Are a Serious Choice in 2026</a>
+    <a class="nav-link" href="/membership-and-settings.html"><span class="nav-num">03</span>The Members Table Is the Spine</a>
+    <a class="nav-link" href="/convention-routing.html"><span class="nav-num">04</span>Convention-Based Routing: A URL Is a Method Name</a>
+    <a class="nav-link active" href="/data-without-migrations.html"><span class="nav-num">05</span>Modeling Data Without a Migration Backlog</a>
+    <a class="nav-link" href="/bootstrap-design-primitive.html"><span class="nav-num">06</span>Bootstrap as a Design Primitive</a>
+    <div class="nav-heading">Security &amp; Access</div>
+    <a class="nav-link" href="/authentication-included.html"><span class="nav-num">07</span>The Login You Don&#x27;t Have to Write</a>
+    <a class="nav-link" href="/two-factor-included.html"><span class="nav-num">08</span>Two-Factor Authentication as a Config Switch</a>
+    <a class="nav-link" href="/permissions-as-data.html"><span class="nav-num">09</span>Permissions as Data, Not If-Statements</a>
+    <a class="nav-link" href="/teams-and-ownership.html"><span class="nav-num">10</span>Teams, Ownership, and Sharing Work Safely</a>
+    <div class="nav-heading">Building with AI</div>
+    <a class="nav-link" href="/codebase-map-for-agents.html"><span class="nav-num">11</span>Give Your AI Assistant a Map, Not a Flashlight</a>
+    <a class="nav-link" href="/mcp-gateway.html"><span class="nav-num">12</span>MCP as a Primitive: One Endpoint for Every Agent</a>
+    <a class="nav-link" href="/agent-orchestration.html"><span class="nav-num">13</span>Plan With the Expensive Model, Execute With the Cheap One</a>
+    <a class="nav-link" href="/pipelines.html"><span class="nav-num">14</span>Pipelines: Automation That Ships With the App</a>
+    <a class="nav-link" href="/scaffolding-and-reuse.html"><span class="nav-num">15</span>Scaffolding Is a Reading Exercise</a>
+    <div class="nav-heading">Operations</div>
+    <a class="nav-link" href="/data-integration.html"><span class="nav-num">16</span>Five Ways Data Crosses the Boundary</a>
+    <a class="nav-link" href="/connections-and-broker-keys.html"><span class="nav-num">17</span>Third-Party Credentials Without Sprawl</a>
+    <a class="nav-link" href="/caching-by-default.html"><span class="nav-num">18</span>Caching You Don&#x27;t Have to Think About</a>
+    <a class="nav-link" href="/feature-flags-and-sidecars.html"><span class="nav-num">19</span>Growing Without Bloating the Core</a>
+    <a class="nav-link" href="/production-checklist.html"><span class="nav-num">20</span>From Localhost to Production: The Honest Checklist</a>
+  </nav>
+  <div class="sidebar-foot">
+    Written against the Tiknix source. <a href="/index.html">All articles</a>
+  </div>
+</aside>
+<div class="main">
+  <header class="topbar">
+    <button class="btn-icon menu-toggle" id="menuToggle" type="button" aria-label="Open menu">&#9776;</button>
+    <div class="topbar-title">
+      <span class="eyebrow">Foundations</span>
+      <strong>Modeling Data Without a Migration Backlog</strong>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-icon" id="themeToggle" type="button" aria-label="Toggle theme"><span id="themeIcon">&#9728;</span></button>
+    </div>
+  </header>
+  <main class="content">
+    <article class="narrow">
+      <header class="article-header">
+        <div class="meta">
+          <span class="chip chip-foundations">Foundations</span>
+          <span class="eyebrow">Article 05 of 20</span>
+          <span class="eyebrow">9 min read</span>
+        </div>
+        <h1>Modeling Data Without a Migration Backlog</h1>
+        <p class="lede">RedBeanPHP&#x27;s fluid schema lets the database follow your code while you explore, then freezes for production. What that buys and what it costs.</p>
+      </header>
+      <div class="article-body">
+<p>
+  The slowest part of adding a feature is rarely the feature. It is the ceremony around the data:
+  write a migration, name it, define up and down, run it, discover you needed one more column,
+  write another migration, remember to run it on staging, watch it fail on production because
+  someone else's migration landed first.
+</p>
+<p>
+  <a href="https://redbeanphp.com/">RedBeanPHP</a> — the ORM under Tiknix — removes that ceremony
+  during development by inverting the relationship. <strong>The database follows your code.</strong> You store an object with a new
+  property; the column appears. You store a new kind of object; the table appears.
+</p>
+
+<h2>What this looks like in practice</h2>
+<pre><code>use \app\Bean;
+
+// The 'project' table does not exist yet. It will in a moment.
+$project = Bean::dispense('project');
+$project->name        = 'Website redesign';
+$project->status      = 'active';
+$project->budgetCents = 250000;
+$project->createdAt   = date('Y-m-d H:i:s');
+
+Bean::store($project);   // table created, columns inferred and typed</code></pre>
+<p>
+  No schema file, no migration, no <code>CREATE TABLE</code>. RedBean inspected the values, chose
+  column types, created the table, and inserted the row. Add <code>$project->ownerEmail</code>
+  tomorrow and the column shows up tomorrow.
+</p>
+<p>Reads and writes stay at the same altitude:</p>
+<pre><code>$project = Bean::load('project', $id);
+$project->status = 'archived';
+Bean::store($project);
+
+$active = Bean::find('project', 'status = ? ORDER BY created_at DESC', ['active']);
+$count  = Bean::count('project', 'status = ?', ['active']);
+
+Bean::trash($project);</code></pre>
+<p>
+  Note the parameter binding. Bean queries are parameterized the same way a hand-written PDO
+  statement would be, so the convenience does not cost you SQL injection protection.
+</p>
+
+<h2>Relations without foreign-key bookkeeping</h2>
+<p>
+  RedBean models one-to-many with <code>own*List</code> and many-to-many with <code>shared*List</code>.
+  The link tables and foreign keys are created and maintained for you:
+</p>
+<pre><code>// One member has many API keys — the FK is set on store()
+$member = Bean::load('member', $memberId);
+$key    = Bean::dispense('apikey');
+$key->name = 'Deploy key';
+$member->ownApikeyList[] = $key;
+Bean::store($member);          // saves both
+
+// Reading back, ordered
+$keys = $member->with(' ORDER BY created_at DESC ')->ownApikeyList;
+
+// Filtered
+$live = $member->withCondition(' is_active = ? ', [1])->ownApikeyList;
+
+// Many-to-many: creates the product_tag link table automatically
+$product->sharedTagList[] = $tag;
+Bean::store($product);</code></pre>
+<p>
+  The <code>x</code> prefix opts a relation into cascade delete — <code>$contact->xownContactresponseList;</code>
+  before <code>Bean::trash($contact)</code> removes the responses along with the contact. Explicit,
+  one character, and impossible to apply by accident.
+</p>
+
+<h2>The two naming rules that matter</h2>
+<p>
+  RedBean's conventions are strict in exactly two places, and both are easy to get wrong once and
+  never again:
+</p>
+<ul>
+  <li>
+    <strong>Bean types are lowercase, no underscores.</strong> <code>'apikey'</code>, not
+    <code>'apiKey'</code> or <code>'api_key'</code>. Tiknix ships <code>lib/Bean.php</code>, a thin
+    wrapper that normalizes the name for you, which is why the examples above use
+    <code>Bean::</code> rather than <code>R::</code>.
+  </li>
+  <li>
+    <strong>Properties are camelCase; columns are snake_case.</strong> You write
+    <code>$bean->createdAt</code>; the column is <code>created_at</code>. The translation is
+    automatic and consistent in both directions.
+  </li>
+</ul>
+<p>
+  Tiknix enforces both with a validation hook at <code>.claude/hooks/validate-tiknix-php.py</code>,
+  which blocks invalid bean names outright and warns on the patterns that quietly defeat the ORM.
+  That hook exists specifically because an AI assistant writing code fast will otherwise reproduce
+  a plausible-looking mistake in fifteen files before anyone notices.
+</p>
+
+<h2>Fluid in development, frozen in production</h2>
+<p>
+  Schema-follows-code is the right behavior while you are exploring and the wrong behavior on a
+  live system — you do not want a typo'd property name silently creating a
+  <code>staus</code> column at 2am.
+</p>
+<p>
+  That is what freeze mode is for. Frozen, RedBean stops altering the schema and throws instead.
+  Your development loop keeps its speed; production keeps its guarantees. The discipline to adopt
+  is straightforward:
+</p>
+<ol>
+  <li>Develop fluid. Let the schema track the code while the shape is still moving.</li>
+  <li>When the shape settles, capture it in a <strong>numbered bean seed</strong> (see below) rather than as a raw SQL dump — that is the artifact your deploy replays.</li>
+  <li>Freeze in production, and apply schema changes by running the reseeder as part of the deploy.</li>
+</ol>
+<p>
+  You have not escaped migrations forever; you have deferred them to the point where you actually
+  know what the schema should be. That is a meaningfully better trade than writing migrations for
+  a design you are still guessing at.
+</p>
+
+<h2>Seeds and the reseeder — how schema actually ships</h2>
+<p>
+  The "capture the schema" step is not a hand-written <code>schema.sql</code> that you keep in sync
+  by hand. Tiknix builds the schema by <strong>running numbered bean seeds</strong> in
+  <code>services/Schema/Seeds/</code> — <code>01_Member.php</code>, <code>02_AuthControl.php</code>,
+  and so on. Each seed dispenses and stores the beans that define a table (and its starter rows),
+  so RedBean creates the schema as a side effect of storing real objects.
+</p>
+<p>One script runs them:</p>
+<pre><code>php scripts/reseed.php            # seed / top-up the configured database
+php scripts/reseed.php --fresh    # drop every table first, then seed
+DB_DSN=mysql://user@host/db php scripts/reseed.php   # same seeds, any backend</code></pre>
+<p>Three properties make this the right thing to wire into a deploy:</p>
+<ul>
+  <li><strong>Idempotent.</strong> Seeds check before they create, so running the reseeder repeatedly is safe — it tops up what is missing and leaves the rest alone.</li>
+  <li><strong>Dialect-agnostic.</strong> RedBean emits correct DDL for whatever it is connected to. The <em>same</em> seeds initialize SQLite locally and MySQL or Postgres on a deploy — there is no <code>schema.sql</code> dialect to juggle.</li>
+  <li><strong>Cache-aware.</strong> <code>reseed.php</code> clears the permission cache after it runs, so new <code>authcontrol</code> rows take effect without a restart.</li>
+</ul>
+<p>
+  So the deploy cycle is: pull the code, run <code>php scripts/reseed.php</code>, done. The schema
+  change traveled as a committed seed file, not as a SQL dump someone remembered to apply.
+</p>
+
+<h2>Seeds, not INSERTs</h2>
+<p>
+  This is the rule that AI-assisted development makes easy to break: <strong>data and permissions
+  ship as idempotent seeds</strong>, replayed by the reseeder, never as direct database writes made
+  once on one machine.
+</p>
+<p>
+  A new route needs an <code>authcontrol</code> row. Starter data needs a seed. If it only exists
+  because someone ran a query in a console, it does not exist on the next clone, the next
+  workspace, or in production — and that class of "works on my install" bug is miserable to
+  diagnose.
+</p>
+
+<h2>When to drop to SQL</h2>
+<p>
+  Bean operations are mandatory for CRUD in Tiknix, and the reason is mechanical rather than
+  aesthetic: FUSE models in <code>models/</code> hook into <code>store()</code> and
+  <code>trash()</code>. A raw <code>R::exec('UPDATE ...')</code> bypasses those hooks, skipping
+  timestamps, validation, and any business logic the model owns. Do it consistently and the model
+  layer becomes decorative.
+</p>
+<p>
+  Raw SQL earns its place for genuine aggregates, reporting queries, and atomic operations that
+  beans cannot express:
+</p>
+<pre><code>// Legitimate: atomic increment without a read-modify-write race
+R::exec('UPDATE member SET login_count = login_count + 1 WHERE id = ?', [$id]);
+
+// Legitimate: a reporting query with joins and grouping
+$rows = R::getAll('SELECT status, COUNT(*) AS n FROM project GROUP BY status');</code></pre>
+<p>The test is simple: if <code>load</code> + <code>store</code> would do it, use <code>load</code> + <code>store</code>.</p>
+
+<div class="callout callout-honest">
+  <span class="callout-title">Honest notes</span>
+  <ul>
+    <li><strong>Fluid mode in production is a real hazard.</strong> Unfrozen, a typo becomes a column and a bad value becomes a widened column type. Freeze before you take real traffic.</li>
+    <li><strong>Inferred column types are conservative.</strong> RedBean widens types to fit what it has seen. For money, precise decimals, or specific integer widths, define the column yourself rather than letting inference guess.</li>
+    <li><strong><code>find()</code> returns id-keyed arrays.</strong> Not <code>0,1,2</code> — keyed by bean id. <code>array_map()</code> over one preserves those keys, and passing that straight into an <code>IN (?,?)</code> binding produces a genuinely confusing "column index out of range" error. Call <code>array_values()</code> at the source getter so every caller is safe. This one bites people; it is called out in the project's own standards for a reason.</li>
+    <li><strong>Relation lists lazy-load.</strong> Convenient, and an easy path to N+1 queries inside a loop. The query cache masks a lot of it — measure rather than assume.</li>
+    <li><strong>Bean properties are dynamic.</strong> Your editor cannot autocomplete them and a typo is not a compile error, it is a silently absent value. FUSE models with real accessor methods are worth adding once a bean type matters.</li>
+  </ul>
+</div>
+      </div>
+      <nav class="article-nav">
+        <a class="prev" href="/convention-routing.html"><span class="dir">&#8592; Previous</span><span class="ttl">Convention-Based Routing: A URL Is a Method Name</span></a><a class="next" href="/bootstrap-design-primitive.html"><span class="dir">Next &#8594;</span><span class="ttl">Bootstrap as a Design Primitive</span></a>
+      </nav>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="brand-logo footer-logo"></span>
+        <div>
+          <div class="footer-word">tiknix</div>
+          <div class="footer-tag">Build on primitives that already work</div>
+        </div>
+      </div>
+      <nav class="footer-links">
+        <a href="https://tiknix.com">Homepage</a>
+        <a href="https://github.com/mfrederico/tiknix">GitHub</a>
+        <a href="https://github.com/mfrederico/tiknix-tutorials">Tutorials</a>
+        <a href="/index.html">All articles</a>
+      </nav>
+    </div>
+    <div class="footer-fine">
+      Documentation written against the Tiknix source. Tiknix is released under the MIT License.
+    </div>
+  </footer>
+</div>
+</div>
+</body>
+</html>

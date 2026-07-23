@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bootstrap as a Design Primitive — Tiknix Docs</title>
+<meta name="description" content="Accessible components and a responsive grid you inherit; palette, type, and identity you own — because 5.3 puts its decisions in variables.">
+<link rel="icon" href="/img/tiknix.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Figtree:ital,wght@0,300..900;1,300..900&family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,100..900,0..100&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/docs.css">
+<script src="/assets/docs.js"></script>
+</head>
+<body>
+<div class="shell">
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+<aside class="sidebar" id="sidebar">
+  <a class="sidebar-brand" href="/index.html">
+    <span class="brand-logo"></span>
+    <span class="brand-word">tiknix</span>
+    <span class="brand-sub">docs</span>
+  </a>
+  <nav class="nav">
+    <div class="nav-heading">Index</div>
+    <a class="nav-link" href="/index.html"><span class="nav-num">&#9737;</span>All articles</a>
+    <div class="nav-heading">Foundations</div>
+    <a class="nav-link" href="/build-on-primitives.html"><span class="nav-num">01</span>Start From Primitives, Not From Scratch</a>
+    <a class="nav-link" href="/php-sqlite-substrate.html"><span class="nav-num">02</span>Why PHP and SQLite Are a Serious Choice in 2026</a>
+    <a class="nav-link" href="/membership-and-settings.html"><span class="nav-num">03</span>The Members Table Is the Spine</a>
+    <a class="nav-link" href="/convention-routing.html"><span class="nav-num">04</span>Convention-Based Routing: A URL Is a Method Name</a>
+    <a class="nav-link" href="/data-without-migrations.html"><span class="nav-num">05</span>Modeling Data Without a Migration Backlog</a>
+    <a class="nav-link active" href="/bootstrap-design-primitive.html"><span class="nav-num">06</span>Bootstrap as a Design Primitive</a>
+    <div class="nav-heading">Security &amp; Access</div>
+    <a class="nav-link" href="/authentication-included.html"><span class="nav-num">07</span>The Login You Don&#x27;t Have to Write</a>
+    <a class="nav-link" href="/two-factor-included.html"><span class="nav-num">08</span>Two-Factor Authentication as a Config Switch</a>
+    <a class="nav-link" href="/permissions-as-data.html"><span class="nav-num">09</span>Permissions as Data, Not If-Statements</a>
+    <a class="nav-link" href="/teams-and-ownership.html"><span class="nav-num">10</span>Teams, Ownership, and Sharing Work Safely</a>
+    <div class="nav-heading">Building with AI</div>
+    <a class="nav-link" href="/codebase-map-for-agents.html"><span class="nav-num">11</span>Give Your AI Assistant a Map, Not a Flashlight</a>
+    <a class="nav-link" href="/mcp-gateway.html"><span class="nav-num">12</span>MCP as a Primitive: One Endpoint for Every Agent</a>
+    <a class="nav-link" href="/agent-orchestration.html"><span class="nav-num">13</span>Plan With the Expensive Model, Execute With the Cheap One</a>
+    <a class="nav-link" href="/pipelines.html"><span class="nav-num">14</span>Pipelines: Automation That Ships With the App</a>
+    <a class="nav-link" href="/scaffolding-and-reuse.html"><span class="nav-num">15</span>Scaffolding Is a Reading Exercise</a>
+    <div class="nav-heading">Operations</div>
+    <a class="nav-link" href="/data-integration.html"><span class="nav-num">16</span>Five Ways Data Crosses the Boundary</a>
+    <a class="nav-link" href="/connections-and-broker-keys.html"><span class="nav-num">17</span>Third-Party Credentials Without Sprawl</a>
+    <a class="nav-link" href="/caching-by-default.html"><span class="nav-num">18</span>Caching You Don&#x27;t Have to Think About</a>
+    <a class="nav-link" href="/feature-flags-and-sidecars.html"><span class="nav-num">19</span>Growing Without Bloating the Core</a>
+    <a class="nav-link" href="/production-checklist.html"><span class="nav-num">20</span>From Localhost to Production: The Honest Checklist</a>
+  </nav>
+  <div class="sidebar-foot">
+    Written against the Tiknix source. <a href="/index.html">All articles</a>
+  </div>
+</aside>
+<div class="main">
+  <header class="topbar">
+    <button class="btn-icon menu-toggle" id="menuToggle" type="button" aria-label="Open menu">&#9776;</button>
+    <div class="topbar-title">
+      <span class="eyebrow">Foundations</span>
+      <strong>Bootstrap as a Design Primitive</strong>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-icon" id="themeToggle" type="button" aria-label="Toggle theme"><span id="themeIcon">&#9728;</span></button>
+    </div>
+  </header>
+  <main class="content">
+    <article class="narrow">
+      <header class="article-header">
+        <div class="meta">
+          <span class="chip chip-foundations">Foundations</span>
+          <span class="eyebrow">Article 06 of 20</span>
+          <span class="eyebrow">10 min read</span>
+        </div>
+        <h1>Bootstrap as a Design Primitive</h1>
+        <p class="lede">Accessible components and a responsive grid you inherit; palette, type, and identity you own — because 5.3 puts its decisions in variables.</p>
+      </header>
+      <div class="article-body">
+<p>
+  There is a persistent belief that using a CSS framework means your app will look like everyone
+  else's. It is half true, and the half that is false is the important one: Bootstrap only makes
+  things look generic if you use it generically. Treated as a <em>primitive</em> — a layout engine,
+  a component library, and a variable system you override — it does the unglamorous work while your
+  design decisions stay yours.
+</p>
+<p>
+  Tiknix uses Bootstrap 5.3 plus Bootstrap Icons, and then spends about 140 lines redefining what
+  those components look like. The result reads as a designed product, not a Bootstrap demo, and the
+  mechanism is worth copying.
+</p>
+
+<h2>What Bootstrap is actually providing</h2>
+<p>Strip away the aesthetics and what remains is a large amount of solved, tedious work:</p>
+<ul>
+  <li><strong>A responsive grid</strong> that behaves the same in every browser you care about.</li>
+  <li><strong>Accessible interactive components</strong> — dropdowns, modals, offcanvas, toasts, tooltips — with focus management, keyboard handling, and ARIA already correct.</li>
+  <li><strong>A form control baseline</strong>: consistent inputs, validation states, input groups, help text.</li>
+  <li><strong>Utility classes</strong> for spacing, flex, and alignment, so most layout never needs a new stylesheet rule.</li>
+  <li><strong>A native theming system</strong> — <code>data-bs-theme="light|dark"</code>, driving every component through CSS custom properties.</li>
+  <li><strong>1,800+ icons</strong> as a font, in one stylesheet link.</li>
+</ul>
+<p>
+  Writing an accessible dropdown that handles keyboard navigation, focus trapping, and click-outside
+  dismissal correctly is a genuine afternoon, and most hand-rolled ones are subtly wrong. This is
+  the same argument as inheriting authentication: the work is done, it is well-tested, and
+  redoing it is not craft.
+</p>
+
+<h2>The override layer: variables, not selectors</h2>
+<p>
+  Bootstrap 5.3 exposes its design decisions as CSS custom properties, which changes how you
+  customize it. You do not write more-specific selectors to fight the framework — you redefine the
+  variables it already reads:
+</p>
+<pre><code>:root, [data-bs-theme="light"] {
+    --bs-body-bg:#f7f8fa;      --bs-body-color:#1a2236;
+    --bs-border-color:#dde1e9;  --bs-emphasis-color:#0f172a;
+    --bs-primary:#0c41aa;       --bs-primary-rgb:12,65,170;
+    --bs-link-color:#0c41aa;    --bs-link-hover-color:#093080;
+    --bs-body-font-family:'Figtree',system-ui,-apple-system,sans-serif;
+    --bs-border-radius:0.65rem; --bs-border-radius-lg:1rem;
+}</code></pre>
+<p>
+  Set those, and <em>every</em> Bootstrap component inherits them — buttons, tables, modals, form
+  controls, alerts, pagination. You have not restyled anything individually; you changed the
+  palette the framework was already reading. The design system file says exactly this in its own
+  comment: Bootstrap's <code>--bs-*</code> vars are overridden "so framework components inherit the
+  palette automatically."
+</p>
+<p>
+  That is the difference between customizing Bootstrap and fighting it. Fighting it produces a
+  stylesheet full of <code>!important</code>. Customizing it produces a short file of variable
+  declarations.
+</p>
+
+<h2>Load order is load-bearing</h2>
+<pre><code>&lt;!-- Bootstrap 5.3 --&gt;
+&lt;link href="…/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"&gt;
+&lt;!-- Bootstrap Icons --&gt;
+&lt;link rel="stylesheet" href="…/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"&gt;
+&lt;!-- App CSS (loaded BEFORE the design system so tokens win) --&gt;
+&lt;link href="/css/app.css" rel="stylesheet"&gt;
+&lt;!-- Shared design system — MUST load last so its :root overrides win --&gt;
+&lt;?php include __DIR__ . '/../components/design-system.php'; ?&gt;</code></pre>
+<p>
+  Three layers, in a deliberate order, each with a comment explaining why. Bootstrap first,
+  application styles second, the token layer last so its <code>:root</code> declarations win.
+</p>
+<p>
+  Writing that reasoning into the template is a small act of maintenance kindness. Load order in
+  CSS is invisible, easy to break with a well-meaning reorder, and produces baffling symptoms when
+  it is wrong. A comment costs nothing and saves an hour.
+</p>
+
+<h2>Dark mode without a flash</h2>
+<p>Bootstrap 5.3's theming is an attribute on the root element, so a toggle is one line:</p>
+<pre><code>document.documentElement.setAttribute('data-bs-theme', 'dark');</code></pre>
+<p>The subtler part is applying the saved preference <em>before the first paint</em>:</p>
+<pre><code>&lt;script&gt;(function(){try{
+  var t=localStorage.getItem('ui-theme');
+  if(t)document.documentElement.setAttribute('data-bs-theme',t);
+}catch(e){}})();&lt;/script&gt;</code></pre>
+<p>
+  A tiny blocking script in the <code>&lt;head&gt;</code>, before any stylesheet has rendered
+  content. Run this at the end of the body instead and a dark-mode user gets a white flash on every
+  page load. It is the kind of detail that separates an application that feels considered from one
+  that feels assembled — and it costs five lines.
+</p>
+
+<h2>The house component layer</h2>
+<p>
+  On top of Bootstrap sits a small set of <code>.ui-*</code> classes for the shapes Bootstrap does
+  not have opinions about:
+</p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Class</th><th>Role</th></tr></thead>
+  <tbody>
+    <tr><td><code>.ui-shell</code>, <code>.ui-sidebar</code>, <code>.ui-main</code>, <code>.ui-topbar</code>, <code>.ui-content</code></td><td>The app shell: fixed dark sidebar, slim sticky topbar</td></tr>
+    <tr><td><code>.ui-panel</code>, <code>.ui-panel-header</code>, <code>.ui-panel-body</code></td><td>The surface card everything sits in</td></tr>
+    <tr><td><code>.ui-display</code>, <code>.ui-eyebrow</code>, <code>.ui-mono</code></td><td>Typographic roles</td></tr>
+    <tr><td><code>.ui-stat</code>, <code>.ui-chip</code>, <code>.ui-avatar</code>, <code>.ui-btn-icon</code></td><td>Recurring small pieces</td></tr>
+  </tbody>
+</table>
+</div>
+<p>
+  Typography carries most of the personality: Figtree for body, Bricolage Grotesque for display,
+  Fraunces for headings, DM Mono for labels and numbers. That is four typefaces doing four distinct
+  jobs — and it is why the interface does not read as Bootstrap, despite being Bootstrap
+  underneath. <strong>Type and color are where identity lives; components are where consistency
+  lives.</strong>
+</p>
+<p>
+  The docs site you are reading uses the same tokens, ported into a standalone stylesheet. Same
+  palette, same type stack, same shell — a different application entirely.
+</p>
+
+<h2>Two primitives worth stealing outright</h2>
+<h3>Server-side tables with zero JavaScript</h3>
+<p>
+  <code>lib/DataTableResponse.php</code> plus <code>public/js/dt-server.js</code> turn "paginated,
+  searchable, sortable admin table" into markup:
+</p>
+<pre><code>&lt;table class="dt-server table table-hover align-middle" id="leadsTable"
+       data-dt-url="/leads/data"
+       data-dt-order="3:desc"
+       data-dt-page-length="25"&gt;
+  &lt;thead&gt;&lt;tr&gt;
+    &lt;th&gt;First Name&lt;/th&gt;
+    &lt;th data-dt-noorder data-dt-nosearch data-dt-class="text-end"&gt;Actions&lt;/th&gt;
+  &lt;/tr&gt;&lt;/thead&gt;
+  &lt;tbody&gt;&lt;/tbody&gt;
+&lt;/table&gt;</code></pre>
+<p>
+  The script auto-initializes any <code>.dt-server</code> table on the page and lazy-loads the
+  DataTables assets only if one exists. Pagination, search, and sort happen in SQL rather than
+  shipping every row to the browser.
+</p>
+<p>
+  The backend half has a security model stated explicitly: every SQL <em>identifier</em> comes from
+  the server-defined column spec and is validated against a strict pattern, sort direction is
+  clamped to <code>ASC|DESC</code>, and all user values are bound as parameters. The client chooses
+  <em>which whitelisted column</em> by numeric index and what value to match — never SQL text. That
+  is the correct way to expose sorting and filtering to a browser, and it is written down where the
+  next person will find it.
+</p>
+<h3>Flash messages as toasts</h3>
+<p>
+  <code>$this->flash('success', 'Saved')</code> in a controller becomes a Bootstrap toast on the
+  next render. One call, no markup, consistent everywhere — including in code an agent wrote, which
+  is precisely when consistency is most at risk.
+</p>
+
+<h2>Why this matters for AI-assisted work</h2>
+<p>
+  A model writing a Bootstrap view is operating in one of the most heavily represented UI vocabularies
+  in existence. <code>card</code>, <code>btn btn-primary</code>, <code>table table-hover</code>,
+  <code>col-md-6</code> — it knows these cold, and gets them right without being told.
+</p>
+<p>
+  Because the palette lives in variables rather than in the markup, that generic-looking output
+  automatically inherits your design. An agent writes a plain Bootstrap card; it renders in your
+  navy, your radius, your type, your shadow. <strong>You get correct markup from the model's
+  training and correct aesthetics from your token layer</strong>, without asking the model to
+  remember a bespoke design system it has never seen.
+</p>
+<p>
+  That is a strong argument for a conventional framework over a bespoke CSS architecture in any
+  codebase where agents write views: the more standard your component vocabulary, the better the
+  generated markup, and the more of your identity you can push into variables the generated markup
+  already reads.
+</p>
+
+<div class="callout callout-honest">
+  <span class="callout-title">Honest notes</span>
+  <ul>
+    <li><strong>CDN dependencies are third-party uptime and privacy.</strong> Bootstrap, Bootstrap Icons, jQuery, DataTables, and Google Fonts all load from CDNs. That is convenient and it means your app depends on hosts you do not control, and your users' browsers make requests to them. Self-host with SRI hashes for anything sensitive or air-gapped.</li>
+    <li><strong>jQuery is still loaded.</strong> Bootstrap 5 does not need it; DataTables does, and app code uses it. Not a crisis, but it is a real payload and a real dependency, and worth an honest look before adding more.</li>
+    <li><strong>There is dead CSS worth deleting.</strong> <code>app.css</code> carries an earlier "inspector" theme (the <code>.inspector-*</code> rules) alongside the current token system. Those classes are no longer referenced by any view — so they are safe to remove, and doing so is the honest fix rather than leaving a second set of variables to drift from the first. The rest of <code>app.css</code> is still in use (the docs pages and the grocery PWA read its variables), so this is a targeted delete, not dropping the file.</li>
+    <li><strong>Four typefaces plus icons is real bandwidth.</strong> Variable fonts help, but this is a considered trade of weight for personality. Subset them if you care about first paint on slow connections.</li>
+    <li><strong>Dark mode needs testing, not just tokens.</strong> Defining dark variables is the easy 90%. Charts, images with baked-in white backgrounds, embedded content, and hand-written inline styles all need checking.</li>
+    <li><strong>Bootstrap does some accessibility work for you, but not all of it.</strong> Its components — dropdowns, modals, offcanvas — handle keyboard navigation and screen-reader labeling out of the box. It does <em>not</em> check that your text has enough color contrast, that focus outlines stay visible, or that your specific pages actually work with a screen reader. Those three checks are yours to run. Shipping an accessible component library is not the same as shipping an accessible app.</li>
+  </ul>
+</div>
+      </div>
+      <nav class="article-nav">
+        <a class="prev" href="/data-without-migrations.html"><span class="dir">&#8592; Previous</span><span class="ttl">Modeling Data Without a Migration Backlog</span></a><a class="next" href="/authentication-included.html"><span class="dir">Next &#8594;</span><span class="ttl">The Login You Don&#x27;t Have to Write</span></a>
+      </nav>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="brand-logo footer-logo"></span>
+        <div>
+          <div class="footer-word">tiknix</div>
+          <div class="footer-tag">Build on primitives that already work</div>
+        </div>
+      </div>
+      <nav class="footer-links">
+        <a href="https://tiknix.com">Homepage</a>
+        <a href="https://github.com/mfrederico/tiknix">GitHub</a>
+        <a href="https://github.com/mfrederico/tiknix-tutorials">Tutorials</a>
+        <a href="/index.html">All articles</a>
+      </nav>
+    </div>
+    <div class="footer-fine">
+      Documentation written against the Tiknix source. Tiknix is released under the MIT License.
+    </div>
+  </footer>
+</div>
+</div>
+</body>
+</html>

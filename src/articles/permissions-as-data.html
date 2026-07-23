@@ -1,0 +1,141 @@
+<p>
+  Authorization has a way of dissolving into the codebase. It starts as one <code>if</code> at the
+  top of a controller, becomes four, then someone adds a check inside a view, then a helper wraps
+  the check, then a special case for admins-who-are-also-team-owners appears in a service class.
+  Six months later nobody can answer "who can reach this URL?" without reading five files, and the
+  honest answer to "what can a member do?" is "we'd have to audit it."
+</p>
+<p>
+  Tiknix moves that answer into a table. One row per route, one number per row.
+</p>
+
+<h2>Four levels, lower is stronger</h2>
+<pre><code>LEVELS['ROOT']   = 1     // super admin
+LEVELS['ADMIN']  = 50    // administrator
+LEVELS['MEMBER'] = 100   // logged-in user
+LEVELS['PUBLIC'] = 101   // not logged in</code></pre>
+<p>
+  A member passes a check when <code>$userLevel &lt;= $requiredLevel</code>. Root passes everything.
+  A route marked 100 admits members, admins, and root, but not guests. A route marked 101 admits
+  everyone.
+</p>
+<p>
+  The gaps are intentional. Levels are integers, not an enum, so you can slot custom tiers between
+  the defaults — 25 for a support role, 75 for a team lead — without touching the framework or
+  renumbering anything.
+</p>
+
+<h2>The authcontrol table</h2>
+<p>Permissions are rows:</p>
+<pre><code>INSERT INTO authcontrol (control, method, level, description) VALUES
+  ('admin',  '*',       50,  'All admin methods'),
+  ('member', 'profile', 100, 'Member profile access'),
+  ('index',  '*',       101, 'Public home pages');</code></pre>
+<p>
+  <code>*</code> is a controller-wide wildcard. Lookup checks the specific
+  <code>controller::method</code> pair first, then falls back to <code>controller::*</code>. So you
+  set a sensible default for the whole controller and override the exceptions — one row to make
+  <code>/admin</code> admin-only, one more to make <code>/admin/status</code> readable by members.
+</p>
+<p>
+  Because it's data, it's queryable. "Show me every route a guest can reach" is
+  <code>SELECT * FROM authcontrol WHERE level = 101</code>. That question has an exact answer, in
+  one place, at any time. That property is the entire argument for this design.
+</p>
+
+<h2>Enforcement happens before your code runs</h2>
+<p>
+  The check is in the dispatcher, not in your controller. A denied request never constructs the
+  class, never touches the database, never reaches a line you wrote:
+</p>
+<pre><code>if (Flight::permissionFor($class, $function, Flight::getMember()->level)) {
+    // ...only now is the controller instantiated
+} else {
+    // logged in  -> render error/403
+    // logged out -> redirect to login with a return URL
+}</code></pre>
+<p>
+  This is a meaningful structural property. In an app where every controller checks its own
+  permissions, forgetting the check is an open door. Here, forgetting to add a row is the failure
+  mode — and forgetting to add a row is visible in a table you can audit, rather than invisible in
+  a file nobody re-reads.
+</p>
+<p>
+  Denied requests also behave correctly for the two different situations: a logged-in user without
+  the right level gets a 403 (their problem is authorization), and an anonymous user gets a login
+  redirect carrying the URL they wanted (their problem is authentication).
+</p>
+
+<h2>Controller-level checks still exist</h2>
+<p>Route-level permission is coarse. Finer decisions stay in code, where they belong:</p>
+<pre><code>if (!$this->requireLogin()) return;                  // must be signed in
+if (!$this->requireLevel(LEVELS['ADMIN'])) return;    // must be admin
+
+if (Flight::hasLevel(LEVELS['ADMIN'])) {
+    // admin-only section of an otherwise member-visible page
+}</code></pre>
+<p>
+  The division is worth stating clearly: <strong>the table decides who may reach the route; code
+  decides what they see and which records they may touch.</strong> "Can this member open
+  <code>/projects/edit</code>?" is a table question. "Can this member edit <em>project 42</em>?" is
+  an ownership question, and it belongs in the controller (or, for shared resources, in a service
+  like <code>lib/TaskAccessControl.php</code> — see <a href="/teams-and-ownership.html">Teams and
+  Ownership</a>).
+</p>
+
+<h2>Build mode: permissions that write themselves</h2>
+<pre><code>[app]
+build_mode = true</code></pre>
+<p>
+  With build mode on, hitting a route that has no permission row creates one automatically and
+  allows the request. You develop by using the app; the permission rows accumulate behind you. At
+  the end you review the table, tighten the levels that should be tighter, and turn build mode off.
+</p>
+<p>
+  This is a very good fit for AI-assisted development. An agent that adds a controller does not
+  need to remember a second, easily-forgotten step in a different subsystem — it writes the method,
+  the route works, and the row exists to be reviewed. The review is the human's job, and it happens
+  against a concrete list rather than an imagined one.
+</p>
+<div class="callout callout-tip">
+  <span class="callout-title">The one rule</span>
+  <p>
+    Build mode must be <strong>off</strong> in production. On, it grants access to any URL that
+    lacks a rule — the exact opposite of what you want facing the internet. It is a development
+    accelerator, not a deployment setting.
+  </p>
+</div>
+
+<h2>Performance: three tiers, and why it exists</h2>
+<p>
+  A permission check runs on every request, so <code>lib/PermissionCache.php</code> layers three
+  tiers:
+</p>
+<ol>
+  <li><strong>Process memory</strong> — a static array. After the first check in a request, subsequent checks are free.</li>
+  <li><strong>APCu</strong> — shared memory across requests on the same server. The common path: no database round trip at all.</li>
+  <li><strong>Database</strong> — consulted on a cold cache, then promoted upward.</li>
+</ol>
+<p>
+  The cache is versioned, so a permission change bumps the version and running processes pick up
+  the new rules without a PHP-FPM restart. If you edit <code>authcontrol</code> rows directly:
+</p>
+<pre><code>php scripts/resetcache.php</code></pre>
+<p>
+  This matters more than a micro-optimization normally would. The reason authorization decays into
+  scattered <code>if</code> statements is often that a table lookup per request feels expensive.
+  Making the lookup effectively free removes the excuse and lets the clean design survive contact
+  with production.
+</p>
+
+<div class="callout callout-honest">
+  <span class="callout-title">Honest notes</span>
+  <ul>
+    <li><strong>Unknown routes default to PUBLIC.</strong> With build mode off and no matching row, the check falls through to public access. This is the single most important thing to know about the system: <em>a missing row is not a locked door.</em> Audit <code>authcontrol</code> before you deploy and add explicit wildcards for every controller.</li>
+    <li><strong>Levels are linear, not a role graph.</strong> A single ordered scale cannot express "billing can see invoices but not users, support can see users but not invoices." For orthogonal permissions you need a second mechanism — feature flags, team roles, or per-record checks in code.</li>
+    <li><strong>Wildcards are blunt.</strong> <code>admin::*</code> at level 50 covers every method you add later, including the one you meant to restrict further. Convenient and quietly permissive — re-read your wildcards when you add sensitive methods.</li>
+    <li><strong>The session caches the level.</strong> Demoting a user does not necessarily end their current session's privileges. If immediate revocation matters, re-read the member or invalidate the session.</li>
+    <li><strong>Renames orphan rows.</strong> Rename a controller and its rows point at nothing — which means its routes fall through to the public default. Update rows alongside renames, and ship them as seeds so every environment agrees.</li>
+    <li><strong>Direct DB edits need a cache reset.</strong> If a permission change "doesn't take," it is almost always the cache. Run <code>scripts/resetcache.php</code>.</li>
+  </ul>
+</div>

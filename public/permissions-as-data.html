@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Permissions as Data, Not If-Statements — Tiknix Docs</title>
+<meta name="description" content="One authcontrol row per route, four privilege levels, and a build mode that writes the rows as you develop.">
+<link rel="icon" href="/img/tiknix.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Figtree:ital,wght@0,300..900;1,300..900&family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,100..900,0..100&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/docs.css">
+<script src="/assets/docs.js"></script>
+</head>
+<body>
+<div class="shell">
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+<aside class="sidebar" id="sidebar">
+  <a class="sidebar-brand" href="/index.html">
+    <span class="brand-logo"></span>
+    <span class="brand-word">tiknix</span>
+    <span class="brand-sub">docs</span>
+  </a>
+  <nav class="nav">
+    <div class="nav-heading">Index</div>
+    <a class="nav-link" href="/index.html"><span class="nav-num">&#9737;</span>All articles</a>
+    <div class="nav-heading">Foundations</div>
+    <a class="nav-link" href="/build-on-primitives.html"><span class="nav-num">01</span>Start From Primitives, Not From Scratch</a>
+    <a class="nav-link" href="/php-sqlite-substrate.html"><span class="nav-num">02</span>Why PHP and SQLite Are a Serious Choice in 2026</a>
+    <a class="nav-link" href="/membership-and-settings.html"><span class="nav-num">03</span>The Members Table Is the Spine</a>
+    <a class="nav-link" href="/convention-routing.html"><span class="nav-num">04</span>Convention-Based Routing: A URL Is a Method Name</a>
+    <a class="nav-link" href="/data-without-migrations.html"><span class="nav-num">05</span>Modeling Data Without a Migration Backlog</a>
+    <a class="nav-link" href="/bootstrap-design-primitive.html"><span class="nav-num">06</span>Bootstrap as a Design Primitive</a>
+    <div class="nav-heading">Security &amp; Access</div>
+    <a class="nav-link" href="/authentication-included.html"><span class="nav-num">07</span>The Login You Don&#x27;t Have to Write</a>
+    <a class="nav-link" href="/two-factor-included.html"><span class="nav-num">08</span>Two-Factor Authentication as a Config Switch</a>
+    <a class="nav-link active" href="/permissions-as-data.html"><span class="nav-num">09</span>Permissions as Data, Not If-Statements</a>
+    <a class="nav-link" href="/teams-and-ownership.html"><span class="nav-num">10</span>Teams, Ownership, and Sharing Work Safely</a>
+    <div class="nav-heading">Building with AI</div>
+    <a class="nav-link" href="/codebase-map-for-agents.html"><span class="nav-num">11</span>Give Your AI Assistant a Map, Not a Flashlight</a>
+    <a class="nav-link" href="/mcp-gateway.html"><span class="nav-num">12</span>MCP as a Primitive: One Endpoint for Every Agent</a>
+    <a class="nav-link" href="/agent-orchestration.html"><span class="nav-num">13</span>Plan With the Expensive Model, Execute With the Cheap One</a>
+    <a class="nav-link" href="/pipelines.html"><span class="nav-num">14</span>Pipelines: Automation That Ships With the App</a>
+    <a class="nav-link" href="/scaffolding-and-reuse.html"><span class="nav-num">15</span>Scaffolding Is a Reading Exercise</a>
+    <div class="nav-heading">Operations</div>
+    <a class="nav-link" href="/data-integration.html"><span class="nav-num">16</span>Five Ways Data Crosses the Boundary</a>
+    <a class="nav-link" href="/connections-and-broker-keys.html"><span class="nav-num">17</span>Third-Party Credentials Without Sprawl</a>
+    <a class="nav-link" href="/caching-by-default.html"><span class="nav-num">18</span>Caching You Don&#x27;t Have to Think About</a>
+    <a class="nav-link" href="/feature-flags-and-sidecars.html"><span class="nav-num">19</span>Growing Without Bloating the Core</a>
+    <a class="nav-link" href="/production-checklist.html"><span class="nav-num">20</span>From Localhost to Production: The Honest Checklist</a>
+  </nav>
+  <div class="sidebar-foot">
+    Written against the Tiknix source. <a href="/index.html">All articles</a>
+  </div>
+</aside>
+<div class="main">
+  <header class="topbar">
+    <button class="btn-icon menu-toggle" id="menuToggle" type="button" aria-label="Open menu">&#9776;</button>
+    <div class="topbar-title">
+      <span class="eyebrow">Security &amp; Access</span>
+      <strong>Permissions as Data, Not If-Statements</strong>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-icon" id="themeToggle" type="button" aria-label="Toggle theme"><span id="themeIcon">&#9728;</span></button>
+    </div>
+  </header>
+  <main class="content">
+    <article class="narrow">
+      <header class="article-header">
+        <div class="meta">
+          <span class="chip chip-security">Security &amp; Access</span>
+          <span class="eyebrow">Article 09 of 20</span>
+          <span class="eyebrow">9 min read</span>
+        </div>
+        <h1>Permissions as Data, Not If-Statements</h1>
+        <p class="lede">One authcontrol row per route, four privilege levels, and a build mode that writes the rows as you develop.</p>
+      </header>
+      <div class="article-body">
+<p>
+  Authorization has a way of dissolving into the codebase. It starts as one <code>if</code> at the
+  top of a controller, becomes four, then someone adds a check inside a view, then a helper wraps
+  the check, then a special case for admins-who-are-also-team-owners appears in a service class.
+  Six months later nobody can answer "who can reach this URL?" without reading five files, and the
+  honest answer to "what can a member do?" is "we'd have to audit it."
+</p>
+<p>
+  Tiknix moves that answer into a table. One row per route, one number per row.
+</p>
+
+<h2>Four levels, lower is stronger</h2>
+<pre><code>LEVELS['ROOT']   = 1     // super admin
+LEVELS['ADMIN']  = 50    // administrator
+LEVELS['MEMBER'] = 100   // logged-in user
+LEVELS['PUBLIC'] = 101   // not logged in</code></pre>
+<p>
+  A member passes a check when <code>$userLevel &lt;= $requiredLevel</code>. Root passes everything.
+  A route marked 100 admits members, admins, and root, but not guests. A route marked 101 admits
+  everyone.
+</p>
+<p>
+  The gaps are intentional. Levels are integers, not an enum, so you can slot custom tiers between
+  the defaults — 25 for a support role, 75 for a team lead — without touching the framework or
+  renumbering anything.
+</p>
+
+<h2>The authcontrol table</h2>
+<p>Permissions are rows:</p>
+<pre><code>INSERT INTO authcontrol (control, method, level, description) VALUES
+  ('admin',  '*',       50,  'All admin methods'),
+  ('member', 'profile', 100, 'Member profile access'),
+  ('index',  '*',       101, 'Public home pages');</code></pre>
+<p>
+  <code>*</code> is a controller-wide wildcard. Lookup checks the specific
+  <code>controller::method</code> pair first, then falls back to <code>controller::*</code>. So you
+  set a sensible default for the whole controller and override the exceptions — one row to make
+  <code>/admin</code> admin-only, one more to make <code>/admin/status</code> readable by members.
+</p>
+<p>
+  Because it's data, it's queryable. "Show me every route a guest can reach" is
+  <code>SELECT * FROM authcontrol WHERE level = 101</code>. That question has an exact answer, in
+  one place, at any time. That property is the entire argument for this design.
+</p>
+
+<h2>Enforcement happens before your code runs</h2>
+<p>
+  The check is in the dispatcher, not in your controller. A denied request never constructs the
+  class, never touches the database, never reaches a line you wrote:
+</p>
+<pre><code>if (Flight::permissionFor($class, $function, Flight::getMember()->level)) {
+    // ...only now is the controller instantiated
+} else {
+    // logged in  -> render error/403
+    // logged out -> redirect to login with a return URL
+}</code></pre>
+<p>
+  This is a meaningful structural property. In an app where every controller checks its own
+  permissions, forgetting the check is an open door. Here, forgetting to add a row is the failure
+  mode — and forgetting to add a row is visible in a table you can audit, rather than invisible in
+  a file nobody re-reads.
+</p>
+<p>
+  Denied requests also behave correctly for the two different situations: a logged-in user without
+  the right level gets a 403 (their problem is authorization), and an anonymous user gets a login
+  redirect carrying the URL they wanted (their problem is authentication).
+</p>
+
+<h2>Controller-level checks still exist</h2>
+<p>Route-level permission is coarse. Finer decisions stay in code, where they belong:</p>
+<pre><code>if (!$this->requireLogin()) return;                  // must be signed in
+if (!$this->requireLevel(LEVELS['ADMIN'])) return;    // must be admin
+
+if (Flight::hasLevel(LEVELS['ADMIN'])) {
+    // admin-only section of an otherwise member-visible page
+}</code></pre>
+<p>
+  The division is worth stating clearly: <strong>the table decides who may reach the route; code
+  decides what they see and which records they may touch.</strong> "Can this member open
+  <code>/projects/edit</code>?" is a table question. "Can this member edit <em>project 42</em>?" is
+  an ownership question, and it belongs in the controller (or, for shared resources, in a service
+  like <code>lib/TaskAccessControl.php</code> — see <a href="/teams-and-ownership.html">Teams and
+  Ownership</a>).
+</p>
+
+<h2>Build mode: permissions that write themselves</h2>
+<pre><code>[app]
+build_mode = true</code></pre>
+<p>
+  With build mode on, hitting a route that has no permission row creates one automatically and
+  allows the request. You develop by using the app; the permission rows accumulate behind you. At
+  the end you review the table, tighten the levels that should be tighter, and turn build mode off.
+</p>
+<p>
+  This is a very good fit for AI-assisted development. An agent that adds a controller does not
+  need to remember a second, easily-forgotten step in a different subsystem — it writes the method,
+  the route works, and the row exists to be reviewed. The review is the human's job, and it happens
+  against a concrete list rather than an imagined one.
+</p>
+<div class="callout callout-tip">
+  <span class="callout-title">The one rule</span>
+  <p>
+    Build mode must be <strong>off</strong> in production. On, it grants access to any URL that
+    lacks a rule — the exact opposite of what you want facing the internet. It is a development
+    accelerator, not a deployment setting.
+  </p>
+</div>
+
+<h2>Performance: three tiers, and why it exists</h2>
+<p>
+  A permission check runs on every request, so <code>lib/PermissionCache.php</code> layers three
+  tiers:
+</p>
+<ol>
+  <li><strong>Process memory</strong> — a static array. After the first check in a request, subsequent checks are free.</li>
+  <li><strong>APCu</strong> — shared memory across requests on the same server. The common path: no database round trip at all.</li>
+  <li><strong>Database</strong> — consulted on a cold cache, then promoted upward.</li>
+</ol>
+<p>
+  The cache is versioned, so a permission change bumps the version and running processes pick up
+  the new rules without a PHP-FPM restart. If you edit <code>authcontrol</code> rows directly:
+</p>
+<pre><code>php scripts/resetcache.php</code></pre>
+<p>
+  This matters more than a micro-optimization normally would. The reason authorization decays into
+  scattered <code>if</code> statements is often that a table lookup per request feels expensive.
+  Making the lookup effectively free removes the excuse and lets the clean design survive contact
+  with production.
+</p>
+
+<div class="callout callout-honest">
+  <span class="callout-title">Honest notes</span>
+  <ul>
+    <li><strong>Unknown routes default to PUBLIC.</strong> With build mode off and no matching row, the check falls through to public access. This is the single most important thing to know about the system: <em>a missing row is not a locked door.</em> Audit <code>authcontrol</code> before you deploy and add explicit wildcards for every controller.</li>
+    <li><strong>Levels are linear, not a role graph.</strong> A single ordered scale cannot express "billing can see invoices but not users, support can see users but not invoices." For orthogonal permissions you need a second mechanism — feature flags, team roles, or per-record checks in code.</li>
+    <li><strong>Wildcards are blunt.</strong> <code>admin::*</code> at level 50 covers every method you add later, including the one you meant to restrict further. Convenient and quietly permissive — re-read your wildcards when you add sensitive methods.</li>
+    <li><strong>The session caches the level.</strong> Demoting a user does not necessarily end their current session's privileges. If immediate revocation matters, re-read the member or invalidate the session.</li>
+    <li><strong>Renames orphan rows.</strong> Rename a controller and its rows point at nothing — which means its routes fall through to the public default. Update rows alongside renames, and ship them as seeds so every environment agrees.</li>
+    <li><strong>Direct DB edits need a cache reset.</strong> If a permission change "doesn't take," it is almost always the cache. Run <code>scripts/resetcache.php</code>.</li>
+  </ul>
+</div>
+      </div>
+      <nav class="article-nav">
+        <a class="prev" href="/two-factor-included.html"><span class="dir">&#8592; Previous</span><span class="ttl">Two-Factor Authentication as a Config Switch</span></a><a class="next" href="/teams-and-ownership.html"><span class="dir">Next &#8594;</span><span class="ttl">Teams, Ownership, and Sharing Work Safely</span></a>
+      </nav>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="brand-logo footer-logo"></span>
+        <div>
+          <div class="footer-word">tiknix</div>
+          <div class="footer-tag">Build on primitives that already work</div>
+        </div>
+      </div>
+      <nav class="footer-links">
+        <a href="https://tiknix.com">Homepage</a>
+        <a href="https://github.com/mfrederico/tiknix">GitHub</a>
+        <a href="https://github.com/mfrederico/tiknix-tutorials">Tutorials</a>
+        <a href="/index.html">All articles</a>
+      </nav>
+    </div>
+    <div class="footer-fine">
+      Documentation written against the Tiknix source. Tiknix is released under the MIT License.
+    </div>
+  </footer>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tiknix Docs — Build on primitives that already work</title>
+<meta name="description" content="Articles on building real systems with Tiknix: PHP, SQLite, authentication, 2FA, permissions, and AI-assisted development on primitives that already work.">
+<link rel="icon" href="/img/tiknix.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Figtree:ital,wght@0,300..900;1,300..900&family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,100..900,0..100&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/docs.css">
+<script src="/assets/docs.js"></script>
+</head>
+<body>
+<div class="shell">
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+<aside class="sidebar" id="sidebar">
+  <a class="sidebar-brand" href="/index.html">
+    <span class="brand-logo"></span>
+    <span class="brand-word">tiknix</span>
+    <span class="brand-sub">docs</span>
+  </a>
+  <nav class="nav">
+    <div class="nav-heading">Index</div>
+    <a class="nav-link active" href="/index.html"><span class="nav-num">&#9737;</span>All articles</a>
+    <div class="nav-heading">Foundations</div>
+    <a class="nav-link" href="/build-on-primitives.html"><span class="nav-num">01</span>Start From Primitives, Not From Scratch</a>
+    <a class="nav-link" href="/php-sqlite-substrate.html"><span class="nav-num">02</span>Why PHP and SQLite Are a Serious Choice in 2026</a>
+    <a class="nav-link" href="/membership-and-settings.html"><span class="nav-num">03</span>The Members Table Is the Spine</a>
+    <a class="nav-link" href="/convention-routing.html"><span class="nav-num">04</span>Convention-Based Routing: A URL Is a Method Name</a>
+    <a class="nav-link" href="/data-without-migrations.html"><span class="nav-num">05</span>Modeling Data Without a Migration Backlog</a>
+    <a class="nav-link" href="/bootstrap-design-primitive.html"><span class="nav-num">06</span>Bootstrap as a Design Primitive</a>
+    <div class="nav-heading">Security &amp; Access</div>
+    <a class="nav-link" href="/authentication-included.html"><span class="nav-num">07</span>The Login You Don&#x27;t Have to Write</a>
+    <a class="nav-link" href="/two-factor-included.html"><span class="nav-num">08</span>Two-Factor Authentication as a Config Switch</a>
+    <a class="nav-link" href="/permissions-as-data.html"><span class="nav-num">09</span>Permissions as Data, Not If-Statements</a>
+    <a class="nav-link" href="/teams-and-ownership.html"><span class="nav-num">10</span>Teams, Ownership, and Sharing Work Safely</a>
+    <div class="nav-heading">Building with AI</div>
+    <a class="nav-link" href="/codebase-map-for-agents.html"><span class="nav-num">11</span>Give Your AI Assistant a Map, Not a Flashlight</a>
+    <a class="nav-link" href="/mcp-gateway.html"><span class="nav-num">12</span>MCP as a Primitive: One Endpoint for Every Agent</a>
+    <a class="nav-link" href="/agent-orchestration.html"><span class="nav-num">13</span>Plan With the Expensive Model, Execute With the Cheap One</a>
+    <a class="nav-link" href="/pipelines.html"><span class="nav-num">14</span>Pipelines: Automation That Ships With the App</a>
+    <a class="nav-link" href="/scaffolding-and-reuse.html"><span class="nav-num">15</span>Scaffolding Is a Reading Exercise</a>
+    <div class="nav-heading">Operations</div>
+    <a class="nav-link" href="/data-integration.html"><span class="nav-num">16</span>Five Ways Data Crosses the Boundary</a>
+    <a class="nav-link" href="/connections-and-broker-keys.html"><span class="nav-num">17</span>Third-Party Credentials Without Sprawl</a>
+    <a class="nav-link" href="/caching-by-default.html"><span class="nav-num">18</span>Caching You Don&#x27;t Have to Think About</a>
+    <a class="nav-link" href="/feature-flags-and-sidecars.html"><span class="nav-num">19</span>Growing Without Bloating the Core</a>
+    <a class="nav-link" href="/production-checklist.html"><span class="nav-num">20</span>From Localhost to Production: The Honest Checklist</a>
+  </nav>
+  <div class="sidebar-foot">
+    Written against the Tiknix source. <a href="/index.html">All articles</a>
+  </div>
+</aside>
+<div class="main">
+  <header class="topbar">
+    <button class="btn-icon menu-toggle" id="menuToggle" type="button" aria-label="Open menu">&#9776;</button>
+    <div class="topbar-title">
+      <span class="eyebrow">Tiknix Documentation</span>
+      <strong>Articles</strong>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-icon" id="themeToggle" type="button" aria-label="Toggle theme"><span id="themeIcon">&#9728;</span></button>
+    </div>
+  </header>
+  <main class="content">
+    <div class="wide">
+<section class="hero">
+        <span class="eyebrow">Tiknix</span>
+        <h1>Build on primitives that already work</h1>
+        <p>
+          Tiknix is a PHP application framework where membership, authentication, two-factor auth,
+          role-based permissions, an ORM, a Bootstrap design layer, data integrations, an MCP
+          gateway, and an AI build pipeline are already wired together. These articles explain what
+          each piece does, why it was built the way it was, and what you still own once you adopt it.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="/build-on-primitives.html">Start with the argument &#8594;</a>
+          <a class="btn btn-ghost" href="/authentication-included.html">Jump to authentication</a>
+        </div>
+      </section>
+
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-label">Substrate</span>
+          <div class="stat-value">PHP 8.5</div>
+          <div class="stat-note">FlightPHP routing, RedBeanPHP ORM, Composer</div>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Default storage</span>
+          <div class="stat-value">SQLite</div>
+          <div class="stat-note">MySQL, MariaDB, and PostgreSQL also supported</div>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Identity</span>
+          <div class="stat-value">Included</div>
+          <div class="stat-note">Sessions, OAuth, TOTP 2FA, recovery codes</div>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Authorization</span>
+          <div class="stat-value">4 levels</div>
+          <div class="stat-note">Route permissions stored as rows, not code</div>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Interface</span>
+          <div class="stat-value">Bootstrap</div>
+          <div class="stat-note">5.3 components, palette and type set by CSS variables</div>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Agent access</span>
+          <div class="stat-value">MCP</div>
+          <div class="stat-note">One gateway endpoint, scoped keys, every call logged</div>
+        </div>
+      </div>
+
+      <section class="panel" style="margin-bottom:1rem">
+        <div class="panel-header"><h3>How to read this series</h3></div>
+        <div class="panel-body">
+          <p style="margin-bottom:.8rem">
+            Each article stands on its own, but they are ordered so that the earlier ones set up
+            vocabulary the later ones use. If you are evaluating Tiknix, read
+            <a href="/build-on-primitives.html">Start From Primitives</a> and
+            <a href="/php-sqlite-substrate.html">Why PHP and SQLite</a> first. If you have already
+            installed it and want to ship something, start at
+            <a href="/convention-routing.html">Convention-Based Routing</a>.
+          </p>
+          <p style="margin-bottom:0">
+            Every article ends with an <strong>honest notes</strong> section: the trade-offs, the
+            sharp edges, and the work the framework does <em>not</em> do for you. A tool you can
+            only describe in superlatives is a tool you do not understand yet.
+          </p>
+        </div>
+      </section>
+      <section class="section-head" id="foundations">
+        <span class="eyebrow">Track</span>
+        <h2>Foundations</h2>
+        <p>The substrate: language, storage, routing, and data modeling. Choices you make once and live inside for years.</p>
+      </section>
+      <div class="cards">
+        <a class="card" href="/build-on-primitives.html">
+          <span class="card-num">01</span>
+          <h3>Start From Primitives, Not From Scratch</h3>
+          <p>Every app needs the same twenty things before it needs anything interesting. Inheriting them is the whole point.</p>
+          <span class="card-foot"><span class="chip chip-foundations">Foundations</span> 8 min</span>
+        </a>
+        <a class="card" href="/php-sqlite-substrate.html">
+          <span class="card-num">02</span>
+          <h3>Why PHP and SQLite Are a Serious Choice in 2026</h3>
+          <p>Two of the most-deployed pieces of software on earth, chosen on merit: boring operations, a copy-the-file backup story, and an ecosystem now moving toward Turso and in-database vector search.</p>
+          <span class="card-foot"><span class="chip chip-foundations">Foundations</span> 11 min</span>
+        </a>
+        <a class="card" href="/membership-and-settings.html">
+          <span class="card-num">03</span>
+          <h3>The Members Table Is the Spine</h3>
+          <p>One identity table, one privilege number, and a key/value settings store that absorbs everything which would otherwise become a column.</p>
+          <span class="card-foot"><span class="chip chip-foundations">Foundations</span> 9 min</span>
+        </a>
+        <a class="card" href="/convention-routing.html">
+          <span class="card-num">04</span>
+          <h3>Convention-Based Routing: A URL Is a Method Name</h3>
+          <p>How Tiknix maps /member/profile to Member-&gt;profile() with no route table — and why that makes a codebase legible to humans and agents alike.</p>
+          <span class="card-foot"><span class="chip chip-foundations">Foundations</span> 7 min</span>
+        </a>
+        <a class="card" href="/data-without-migrations.html">
+          <span class="card-num">05</span>
+          <h3>Modeling Data Without a Migration Backlog</h3>
+          <p>RedBeanPHP&#x27;s fluid schema lets the database follow your code while you explore, then freezes for production. What that buys and what it costs.</p>
+          <span class="card-foot"><span class="chip chip-foundations">Foundations</span> 9 min</span>
+        </a>
+        <a class="card" href="/bootstrap-design-primitive.html">
+          <span class="card-num">06</span>
+          <h3>Bootstrap as a Design Primitive</h3>
+          <p>Accessible components and a responsive grid you inherit; palette, type, and identity you own — because 5.3 puts its decisions in variables.</p>
+          <span class="card-foot"><span class="chip chip-foundations">Foundations</span> 10 min</span>
+        </a>
+      </div>
+      <section class="section-head" id="security">
+        <span class="eyebrow">Track</span>
+        <h2>Security &amp; Access</h2>
+        <p>Identity, authorization, and sharing. The parts that are unglamorous to build and expensive to get wrong.</p>
+      </section>
+      <div class="cards">
+        <a class="card" href="/authentication-included.html">
+          <span class="card-num">07</span>
+          <h3>The Login You Don&#x27;t Have to Write</h3>
+          <p>Registration, sessions, password hashing, reset flows, Google OAuth, CSRF, rate limiting — shipped, wired, and already exercised.</p>
+          <span class="card-foot"><span class="chip chip-security">Security &amp; Access</span> 9 min</span>
+        </a>
+        <a class="card" href="/two-factor-included.html">
+          <span class="card-num">08</span>
+          <h3>Two-Factor Authentication as a Config Switch</h3>
+          <p>TOTP, QR enrollment, recovery codes, and 30-day device trust with three policy states: off, optional, required.</p>
+          <span class="card-foot"><span class="chip chip-security">Security &amp; Access</span> 8 min</span>
+        </a>
+        <a class="card" href="/permissions-as-data.html">
+          <span class="card-num">09</span>
+          <h3>Permissions as Data, Not If-Statements</h3>
+          <p>One authcontrol row per route, four privilege levels, and a build mode that writes the rows as you develop.</p>
+          <span class="card-foot"><span class="chip chip-security">Security &amp; Access</span> 9 min</span>
+        </a>
+        <a class="card" href="/teams-and-ownership.html">
+          <span class="card-num">10</span>
+          <h3>Teams, Ownership, and Sharing Work Safely</h3>
+          <p>Personal vs. team resources, four roles, and a single access-control service the rest of the app asks before it shows you anything.</p>
+          <span class="card-foot"><span class="chip chip-security">Security &amp; Access</span> 7 min</span>
+        </a>
+      </div>
+      <section class="section-head" id="ai">
+        <span class="eyebrow">Track</span>
+        <h2>Building with AI</h2>
+        <p>How an agent works inside a codebase that can describe itself — and the guardrails that keep the output coherent.</p>
+      </section>
+      <div class="cards">
+        <a class="card" href="/codebase-map-for-agents.html">
+          <span class="card-num">11</span>
+          <h3>Give Your AI Assistant a Map, Not a Flashlight</h3>
+          <p>Tiknix ships MCP tools that hand an agent a structured inventory of what already exists — so its first instinct is reuse, not reinvention.</p>
+          <span class="card-foot"><span class="chip chip-ai">Building with AI</span> 10 min</span>
+        </a>
+        <a class="card" href="/mcp-gateway.html">
+          <span class="card-num">12</span>
+          <h3>MCP as a Primitive: One Endpoint for Every Agent</h3>
+          <p>A gateway that aggregates tools, namespaces them, authenticates per key, and logs every call — so agent access is managed like user access.</p>
+          <span class="card-foot"><span class="chip chip-ai">Building with AI</span> 10 min</span>
+        </a>
+        <a class="card" href="/agent-orchestration.html">
+          <span class="card-num">13</span>
+          <h3>Plan With the Expensive Model, Execute With the Cheap One</h3>
+          <p>The planner/worker/auditor pipeline: who is allowed to make design decisions, who merges, and why concurrency stays at three.</p>
+          <span class="card-foot"><span class="chip chip-ai">Building with AI</span> 11 min</span>
+        </a>
+        <a class="card" href="/pipelines.html">
+          <span class="card-num">14</span>
+          <h3>Pipelines: Automation That Ships With the App</h3>
+          <p>Declarative JSON steps — HTTP, DB, shell, agent, MCP call, branch, notify — versioned in the repo next to the code they automate.</p>
+          <span class="card-foot"><span class="chip chip-ai">Building with AI</span> 9 min</span>
+        </a>
+        <a class="card" href="/scaffolding-and-reuse.html">
+          <span class="card-num">15</span>
+          <h3>Scaffolding Is a Reading Exercise</h3>
+          <p>Generated code is only a gift if it looks like the code around it. How conventions turn a generator into a teacher.</p>
+          <span class="card-foot"><span class="chip chip-ai">Building with AI</span> 8 min</span>
+        </a>
+      </div>
+      <section class="section-head" id="ops">
+        <span class="eyebrow">Track</span>
+        <h2>Operations</h2>
+        <p>Integrations, performance, growth, and the move to production. What happens after it works on your laptop.</p>
+      </section>
+      <div class="cards">
+        <a class="card" href="/data-integration.html">
+          <span class="card-num">16</span>
+          <h3>Five Ways Data Crosses the Boundary</h3>
+          <p>Outbound connectors, inbound API keys, signed webhooks, two-way email threads, and pipelines — sharing one set of auth, logging, and revocation machinery.</p>
+          <span class="card-foot"><span class="chip chip-ops">Operations</span> 11 min</span>
+        </a>
+        <a class="card" href="/connections-and-broker-keys.html">
+          <span class="card-num">17</span>
+          <h3>Third-Party Credentials Without Sprawl</h3>
+          <p>Encrypted-at-rest tokens on the control plane, OAuth connectors behind one interface, and revocable broker keys instead of shared secrets.</p>
+          <span class="card-foot"><span class="chip chip-ops">Operations</span> 10 min</span>
+        </a>
+        <a class="card" href="/caching-by-default.html">
+          <span class="card-num">18</span>
+          <h3>Caching You Don&#x27;t Have to Think About</h3>
+          <p>A transparent query cache, a three-tier permission cache, and OPcache preloading — with an honest look at when each one earns its keep.</p>
+          <span class="card-foot"><span class="chip chip-ops">Operations</span> 9 min</span>
+        </a>
+        <a class="card" href="/feature-flags-and-sidecars.html">
+          <span class="card-num">19</span>
+          <h3>Growing Without Bloating the Core</h3>
+          <p>Per-member feature flags with a privilege floor, and sidecar apps that live in their own repo but log in through yours.</p>
+          <span class="card-foot"><span class="chip chip-ops">Operations</span> 8 min</span>
+        </a>
+        <a class="card" href="/production-checklist.html">
+          <span class="card-num">20</span>
+          <h3>From Localhost to Production: The Honest Checklist</h3>
+          <p>Defaults that are right for development are wrong for the internet. The specific switches to flip, and what breaks if you don&#x27;t.</p>
+          <span class="card-foot"><span class="chip chip-ops">Operations</span> 10 min</span>
+        </a>
+      </div>
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="brand-logo footer-logo"></span>
+        <div>
+          <div class="footer-word">tiknix</div>
+          <div class="footer-tag">Build on primitives that already work</div>
+        </div>
+      </div>
+      <nav class="footer-links">
+        <a href="https://tiknix.com">Homepage</a>
+        <a href="https://github.com/mfrederico/tiknix">GitHub</a>
+        <a href="https://github.com/mfrederico/tiknix-tutorials">Tutorials</a>
+        <a href="/index.html">All articles</a>
+      </nav>
+    </div>
+    <div class="footer-fine">
+      Documentation written against the Tiknix source. Tiknix is released under the MIT License.
+    </div>
+  </footer>
+</div>
+</div>
+</body>
+</html>

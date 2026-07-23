@@ -1,0 +1,182 @@
+<p>
+  Ask what the most important table in an application is and you will get answers about orders,
+  documents, or whatever the product sells. The real answer is almost always the one that says who
+  people are. Everything else hangs off it: ownership, permissions, audit trails, billing,
+  notifications, sessions. Get it wrong early and you will be untangling it for years.
+</p>
+<p>
+  Tiknix has one such table — <code>member</code> — and it is worth reading column by column,
+  because its shape encodes a set of decisions you would otherwise have to make yourself.
+</p>
+
+<h2>One table, one identity</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Group</th><th>Columns</th><th>What it settles</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Identity</td>
+      <td><code>username</code>, <code>email</code>, <code>display_name</code>, <code>first_name</code>, <code>last_name</code>, <code>bio</code>, <code>avatar_url</code></td>
+      <td>Login handle and public presentation, separated</td>
+    </tr>
+    <tr>
+      <td>Authorization</td>
+      <td><code>level</code></td>
+      <td>The single number every permission check reads</td>
+    </tr>
+    <tr>
+      <td>Lifecycle</td>
+      <td><code>status</code>, <code>is_active</code>, <code>email_verified</code>, <code>created_at</code>, <code>updated_at</code></td>
+      <td>Whether this account may be used at all</td>
+    </tr>
+    <tr>
+      <td>Password auth</td>
+      <td><code>password</code>, <code>reset_token</code>, <code>reset_expires</code>, <code>needs_password_setup</code></td>
+      <td>Hash plus the reset flow's state</td>
+    </tr>
+    <tr>
+      <td>Federated auth</td>
+      <td><code>google_id</code></td>
+      <td>OAuth identity linked to the same row</td>
+    </tr>
+    <tr>
+      <td>Second factor</td>
+      <td><code>totp_secret</code>, <code>totp_enabled</code>, <code>totp_enabled_at</code>, <code>recovery_codes</code></td>
+      <td>2FA state, on the member rather than in a side table</td>
+    </tr>
+    <tr>
+      <td>Activity</td>
+      <td><code>last_login</code>, <code>login_count</code></td>
+      <td>Cheap, always-available signal of who is actually using the system</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<p>
+  Notice what is <em>not</em> here: no separate <code>user</code> and <code>profile</code> split, no
+  parallel <code>admin</code> table, no distinct <code>oauth_identity</code> table, no separate
+  <code>two_factor</code> record. One row per human.
+</p>
+
+<h2>Why one table rather than several</h2>
+<p>
+  The multi-table version looks cleaner on a whiteboard and is worse in practice, for a specific
+  reason: <strong>every split creates a state where the halves disagree.</strong> An admin row with
+  no user row. A profile orphaned by a deleted account. An OAuth identity pointing at a member who
+  was disabled last week. Each of those is a real incident someone has debugged.
+</p>
+<p>Concretely, the single-table design means:</p>
+<ul>
+  <li>
+    <strong>One place to disable someone.</strong> Set <code>status</code> and they are out —
+    password login, OAuth login, and API keys all resolve through the same row. There is no second
+    system that keeps letting them in.
+  </li>
+  <li>
+    <strong>Google sign-in and password login are the same account.</strong> A member registered
+    with Google has <code>google_id</code> set and <code>password</code> empty. The login path
+    detects that and says "use the Google button" instead of failing with invalid credentials. The
+    same person, one identity, two ways in.
+  </li>
+  <li>
+    <strong>Permissions have one input.</strong> <code>level</code> is an integer on the member row.
+    Every check — dispatcher, controller, view — reads that one value. No role-resolution query, no
+    cache of derived roles, no possibility of two subsystems computing different answers.
+  </li>
+</ul>
+<p>
+  The cost is a wide table with nullable columns, some of which apply to only a fraction of
+  accounts. That is a genuine normalization compromise, made deliberately, and it is the right one
+  at this scale.
+</p>
+
+<h2>Settings: the extension point that isn't a schema change</h2>
+<p>
+  Applications accumulate per-user state endlessly — a theme preference, a dismissed banner, a
+  default filter, a feature grant. Adding a column for each is how a table gets to ninety columns.
+</p>
+<p>
+  Tiknix has a <code>settings</code> table instead: <code>member_id</code>,
+  <code>setting_key</code>, <code>setting_value</code>. Two helpers make it a one-liner:
+</p>
+<pre><code>Flight::setSetting('dashboard.default_view', 'compact');
+$view = Flight::getSetting('dashboard.default_view');   // current member
+
+// Explicit member
+$theme = Flight::getSetting('ui.theme', $memberId);</code></pre>
+<p>
+  With no member id, it resolves the current member. And there is one detail worth knowing:
+  <strong>system-wide settings are member-scoped too</strong>, owned by
+  <code>SYSTEM_ADMIN_ID</code>. Passing member 0 is normalized to that account.
+</p>
+<pre><code>if ($memberId === 0) {
+    $memberId = SYSTEM_ADMIN_ID;   // system settings are owned by the system admin
+}</code></pre>
+<p>
+  That is a small decision with a nice consequence: there is one settings mechanism, not a
+  per-member one and a global one. The admin toggle for whether public registration is open lives
+  in the same table as a member's theme preference — <code>Flight::getSetting('registration_enabled')</code>
+  — with the same API and the same storage.
+</p>
+<p>
+  Feature flags reuse this too, as <code>feature.&lt;key&gt;</code> rows (see
+  <a href="/feature-flags-and-sidecars.html">Growing Without Bloating the Core</a>). A new
+  capability that needs per-member state needs no new table and no migration — just a key naming
+  convention.
+</p>
+
+<h2>The member is the hub of every relation</h2>
+<p>
+  Because there is exactly one identity table, the ownership graph is unambiguous. In RedBeanPHP
+  terms, the FUSE model <code>Model_Member</code> exists precisely so that relations work by name:
+</p>
+<pre><code>$member->ownApikeyList;      // API keys
+$member->ownContactList;     // contact submissions
+$member->ownSettingsList;    // preferences</code></pre>
+<p>
+  And the wider schema follows the same rule — API keys, teams and team memberships, workbench
+  tasks, connections, notifications, instances, pipeline runs all carry a <code>member_id</code>.
+  "Who owns this?" always has an answer, and it is always the same kind of answer.
+</p>
+<p>
+  That consistency is what makes record-level access control tractable. When every resource
+  identifies its owner the same way, a service like <code>TaskAccessControl</code> can ask one
+  question about any of them.
+</p>
+
+<h2>The session is a snapshot — know this one</h2>
+<p>On successful login, the member row is exported into the session:</p>
+<pre><code>$_SESSION['member'] = $member->export();</code></pre>
+<p>
+  Every subsequent request reads level, id, and username from that array without touching the
+  database. Fast, and correct for the vast majority of requests — but it is a <em>copy taken at
+  login</em>.
+</p>
+<p>
+  Change someone's level, disable their account, or revoke a feature, and their existing session may
+  keep operating on the old snapshot until they log in again. If a privilege change must take
+  effect immediately, re-read the member from the database in that code path or terminate the
+  session. This is the single most common surprise in the whole membership design, and it is worth
+  knowing before you discover it during an incident.
+</p>
+
+<h2>The pattern, generalized</h2>
+<ol>
+  <li><strong>One identity table.</strong> Resist the split; nullable columns beat orphan rows.</li>
+  <li><strong>One authorization input</strong> stored on that row, read by everything.</li>
+  <li><strong>One status field</strong> that is checked in the login query itself, not after it.</li>
+  <li><strong>A key/value settings table</strong> for everything that would otherwise become a column.</li>
+  <li><strong>A consistent <code>member_id</code></strong> on every owned resource, so ownership questions have one shape.</li>
+</ol>
+
+<div class="callout callout-honest">
+  <span class="callout-title">Honest notes</span>
+  <ul>
+    <li><strong>Two overlapping status fields — <code>status</code> is the authoritative one.</strong> Both <code>status</code> and <code>is_active</code> exist in older databases, a normal artifact of a schema that grew. The current member seed (<code>services/Schema/Seeds/01_Member.php</code>) and the login query both use <code>status</code> — <code>is_active</code> is vestigial and no longer written on a fresh reseed. Standardize your own checks on <code>status</code>, and treat a stray <code>is_active</code> as something to drop, not to maintain.</li>
+    <li><strong>Settings values are strings.</strong> There is no typing or validation. Store JSON if you need structure, and validate on read — a setting written by an older version of your code is still there.</li>
+    <li><strong>Settings are unindexed key lookups by convention.</strong> Fine at the volumes this is used for; if you push thousands of settings per member through hot paths, add an index on <code>(member_id, setting_key)</code>.</li>
+    <li><strong>The session snapshot bites eventually.</strong> See above. Decide deliberately which changes must be immediate.</li>
+    <li><strong>One level per member means no per-context roles.</strong> A member cannot be an admin in one team and a viewer in another via <code>level</code> alone — that is what the team role system exists for. Do not try to encode context-dependent authority in the level.</li>
+    <li><strong>Deleting a member is not a solved problem.</strong> Cascade rules are per-relation (<code>xown</code> vs <code>own</code>), and the right behavior — delete, anonymize, or retain — is a product decision. Decide it before someone asks to be forgotten.</li>
+  </ul>
+</div>

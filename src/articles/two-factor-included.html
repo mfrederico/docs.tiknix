@@ -1,0 +1,135 @@
+<p>
+  Two-factor authentication is one of those features that everybody agrees is important and
+  almost nobody adds to an internal tool, because "important" and "worth two days of work right
+  now" are different judgments. So it stays on the list, and the admin panel — the account with
+  the most power in the system — stays behind a single password.
+</p>
+<p>
+  In Tiknix, TOTP two-factor is already built. Turning it on is a line in a config file, and the
+  interesting design question becomes <em>what policy do I want</em> rather than <em>how do I
+  implement this</em>.
+</p>
+
+<h2>Three states, two flags</h2>
+<pre><code>; conf/config.ini
+[security]
+two_factor_enabled = true   ; master switch
+two_factor_enforce = true   ; false = optional, true = required</code></pre>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>enabled</th><th>enforce</th><th>Behavior</th></tr></thead>
+  <tbody>
+    <tr><td>false</td><td>—</td><td>2FA is entirely off. No setup screen, no verification. Convenient for local development.</td></tr>
+    <tr><td>true</td><td>false</td><td><strong>Optional.</strong> Eligible users are prompted at login but can choose "Skip for now." Anyone who opts in verifies on every login.</td></tr>
+    <tr><td>true</td><td>true</td><td><strong>Required.</strong> Eligible users must enroll before they can proceed. This is the default and the secure setting.</td></tr>
+  </tbody>
+</table>
+</div>
+<p>
+  "Optional" is genuinely useful and often skipped in implementations that treat 2FA as a binary.
+  It lets you roll out to a team without locking anyone out on a Monday morning: the prompt appears,
+  the willing enroll, the skip is session-scoped so it asks again next time, and you flip
+  <code>enforce</code> to <code>true</code> once adoption is where you want it.
+</p>
+
+<h2>Who it applies to</h2>
+<pre><code>// lib/TwoFactorAuth.php
+public const REQUIRED_LEVELS = [1, 50];           // ROOT, ADMIN
+public const TRUST_DURATION  = 30 * 24 * 60 * 60; // 30 days
+public const RECOVERY_CODE_COUNT = 10;</code></pre>
+<p>
+  By default 2FA is scoped to the accounts that can do damage — root and admin — plus users with
+  workbench access, since those can trigger code execution. Ordinary members are not prompted.
+  That is a defensible default: protect privilege, don't tax everyone. Widening it to all members
+  is a one-line change to <code>REQUIRED_LEVELS</code>.
+</p>
+<p>
+  Enforcement funnels through two functions — <code>needsSetup()</code> and
+  <code>needsVerification()</code> — called from the login path. Two choke points, not scattered
+  checks, which is what makes the policy auditable.
+</p>
+
+<h2>The enrollment flow</h2>
+<ol>
+  <li>User authenticates with username and password. The full session is <strong>not</strong> established — only a pending member id is held.</li>
+  <li>They are redirected to <code>/auth/twofasetup</code>, which renders a QR code as inline SVG (BaconQrCode, no external image service, nothing leaves the server).</li>
+  <li>They scan it with any TOTP app — Google Authenticator, Authy, 1Password, Bitwarden. Standard <code>otpauth://</code>, no proprietary app.</li>
+  <li>They enter a 6-digit code to prove enrollment worked.</li>
+  <li>Ten single-use recovery codes are displayed once, formatted <code>XXXX-XXXX-XXXX</code>.</li>
+  <li>The device is trusted for 30 days and login completes.</li>
+</ol>
+<p>
+  Subsequent logins from an untrusted device land on <code>/auth/twofaverify</code>, which takes
+  either a TOTP code or a recovery code.
+</p>
+
+<h2>Details that matter</h2>
+<h3>Codes are verified with drift tolerance</h3>
+<pre><code>return self::getGoogle2FA()->verifyKey($secret, $code, 1);</code></pre>
+<p>
+  One period of tolerance either side — about ±30 seconds. Without it, a phone whose clock is
+  slightly off produces valid codes the server rejects, which generates support tickets and, worse,
+  trains users to believe 2FA is flaky.
+</p>
+
+<h3>Recovery codes are hashed and consumed</h3>
+<p>
+  Recovery codes are stored as <code>password_hash()</code> digests, not plaintext — a database
+  read does not hand over a working bypass. Verification normalizes case and dashes (so a user
+  typing <code>a1b2c3d4e5f6</code> in lowercase succeeds), and a matched code is
+  <strong>removed from the stored set immediately</strong> and the remaining count logged.
+  Single-use means single-use.
+</p>
+
+<h3>Device trust is a signed token, not a flag</h3>
+<pre><code>$payload   = $memberId . ':' . $expiry;
+$signature = hash_hmac('sha256', $payload, self::getTrustSecret());
+return base64_encode($payload) . '.' . $signature;</code></pre>
+<p>
+  The trust token carries its own expiry and is HMAC-signed, so a tampered payload fails
+  validation. Comparison uses <code>hash_equals()</code> — timing-safe, which is the kind of detail
+  that separates a real implementation from a plausible one. The client stores it; the client
+  cannot forge it.
+</p>
+
+<h3>Bypasses are narrow and honest about it</h3>
+<p>Two escape hatches exist, and both are deliberately hard to abuse:</p>
+<ul>
+  <li>
+    <strong>Testing bypass</strong> requires the <code>TIKNIX_TESTING</code> environment variable
+    <em>and</em> a connection from <code>127.0.0.1</code>. It checks <code>REMOTE_ADDR</code>, the
+    actual TCP peer, not a forwarded header a client could set.
+  </li>
+  <li>
+    <strong>IP whitelist</strong> is an admin-configured CIDR list, off unless explicitly enabled,
+    and also matched against <code>REMOTE_ADDR</code>.
+  </li>
+</ul>
+<p>
+  Both are documented in the source with the reasoning for using <code>REMOTE_ADDR</code> spelled
+  out. A bypass you can read and reason about is much safer than one that is undocumented.
+</p>
+
+<h2>Why this belongs in the framework rather than in your backlog</h2>
+<p>
+  Every part of the flow above is a place a rushed implementation goes wrong: plaintext recovery
+  codes, no drift tolerance, an unsigned "trusted device" cookie, a bypass that trusts
+  <code>X-Forwarded-For</code>, recovery codes that stay valid after use. None of these are exotic
+  mistakes — they are the normal outcome of writing 2FA under deadline pressure.
+</p>
+<p>
+  The value of inheriting it is that the decisions were made once, by someone reading the details,
+  and are now the same in every application built on the framework.
+</p>
+
+<div class="callout callout-honest">
+  <span class="callout-title">Honest notes</span>
+  <ul>
+    <li><strong>TOTP only.</strong> No WebAuthn, no passkeys, no SMS (SMS is a feature to lack), no push. TOTP is the right 80% answer; hardware keys are a real gap if you need phishing-resistant auth.</li>
+    <li><strong>30-day device trust is a real trade-off.</strong> It buys adoption at the cost of a month-long window on a stolen, unlocked laptop. Shorten <code>TRUST_DURATION</code> for high-sensitivity deployments.</li>
+    <li><strong>Recovery codes are shown exactly once.</strong> If a user does not save them and loses their authenticator, an admin has to intervene. Have an account-recovery procedure written down <em>before</em> you enforce 2FA.</li>
+    <li><strong>The trust secret is a real secret.</strong> Trust tokens are only as strong as the signing key behind them. Keep <code>[security]</code> out of version control and rotate it if it leaks — rotation invalidates all trusted devices, which is the correct behavior.</li>
+    <li><strong>Members are not covered by default.</strong> If your app holds customer data that customers care about, extend <code>REQUIRED_LEVELS</code> or run in optional mode so members can opt in.</li>
+    <li><strong>Enabling 2FA changes your support load.</strong> New phone, wiped app, lost codes — these arrive as tickets. Budget for it; it is still worth it.</li>
+  </ul>
+</div>

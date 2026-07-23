@@ -1,0 +1,149 @@
+<p>
+  Here is a list of things your application needs before it does anything a user would pay for:
+  a login form, a password hash, a session, a logout, a password reset, a way to tell an
+  administrator apart from a customer, a CSRF token, a database connection, a schema, a way to
+  change that schema, a 404 page, a 500 page, a log file, a way to read the log file, an email
+  sender, a rate limiter on the login form, a settings page, a way to seed the first admin
+  account, and a deployment story.
+</p>
+<p>
+  None of that is your product. All of it is required. And every one of those pieces has a
+  well-understood, decades-old correct answer that thousands of people have already stress-tested
+  in production.
+</p>
+<p>
+  <strong>The premise of Tiknix is that you should inherit that list rather than re-derive it.</strong>
+  Not because writing it is hard, but because writing it is <em>done</em> — and the twentieth
+  reimplementation of a password reset flow is not craft, it is entropy.
+</p>
+
+<h2>What "primitive" means here</h2>
+<p>
+  A primitive is a capability that is stable enough to build on without thinking about it again.
+  Not a snippet you paste, not a service you rent, not a vendor you hope stays solvent — a piece
+  of your own running system whose behavior you can name in a sentence and whose edges you can
+  read in an afternoon.
+</p>
+<p>Tiknix ships these as primitives:</p>
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>Primitive</th><th>Where it lives</th><th>What it settles</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Authentication</td><td><code>controls/Auth.php</code></td><td>Register, login by username or email, logout, password reset, Google OAuth</td></tr>
+    <tr><td>Two-factor auth</td><td><code>lib/TwoFactorAuth.php</code></td><td>TOTP enrollment, verification, recovery codes, device trust</td></tr>
+    <tr><td>Authorization</td><td><code>authcontrol</code> table</td><td>Which privilege level may reach which route</td></tr>
+    <tr><td>Persistence</td><td><a href="https://redbeanphp.com/">RedBeanPHP</a></td><td>CRUD, relations, schema creation</td></tr>
+    <tr><td>Request handling</td><td><a href="https://flightphp.com/">FlightPHP</a> + <code>lib/FlightMap.php</code></td><td>URL to controller method, JSON responses, redirects</td></tr>
+    <tr><td>CSRF</td><td><code>lib/SimpleCsrf.php</code></td><td>One session token, one helper, every form</td></tr>
+    <tr><td>Rate limiting</td><td><code>lib/RateLimiter.php</code></td><td>Brute-force resistance on login and reset</td></tr>
+    <tr><td>Secrets at rest</td><td><code>lib/EncryptionService.php</code></td><td>libsodium symmetric encryption for stored tokens</td></tr>
+    <tr><td>Mail</td><td><code>lib/Mailer.php</code></td><td>Password reset, team invite, welcome, contact replies</td></tr>
+  </tbody>
+</table>
+</div>
+<p>
+  Each one is a few hundred lines you can read. That readability is the point: a primitive you
+  cannot inspect is a dependency, and dependencies you cannot inspect are where outages live.
+</p>
+
+<h2>The AI argument, stated carefully</h2>
+<p>
+  A coding agent is extremely good at writing code that resembles code it has seen. It is much
+  less good at deciding <em>which</em> code should exist. Given an empty directory and the prompt
+  "build me a customer portal," a capable model will happily invent an authentication system, a
+  session scheme, a permissions concept, and a database layer — all plausible, all subtly
+  different from the ones it invented last week, and none of them integrated with each other.
+</p>
+<p>
+  Give the same model a codebase where authentication is already a solved fact, and its job
+  collapses into something it is genuinely excellent at: <strong>writing the next controller in
+  the style of the existing eleven.</strong> The agent stops being an architect — a role it is
+  unreliable in — and becomes a very fast, very consistent implementer, which is a role it is
+  extremely strong in.
+</p>
+<blockquote>
+  Constrained generation beats open generation. The narrower the decision space, the better the
+  output — and existing primitives are how you narrow it.
+</blockquote>
+<p>
+  This is why Tiknix leans on conventions so heavily. A URL maps to a method name by rule. A bean
+  type maps to a table by rule. A route's permission is a row by rule. Rules are things an agent
+  can follow perfectly, forever, without being reminded. Preferences are things it forgets by the
+  third file.
+</p>
+
+<h2>This is not low-code</h2>
+<p>
+  It is worth being blunt about what this is not. There is no visual builder here, no drag-and-drop
+  canvas, no proprietary runtime that generates an app you cannot read. What you get after
+  <code>./install.sh</code> is a directory of PHP files, a SQLite database, and a Git repository.
+  You can open any file. You can delete any feature. You can host it on a $5 VPS or a shared host
+  from 2009.
+</p>
+<p>
+  The distinction matters because the two approaches fail differently. A drag-and-drop tool fails
+  at the boundary — the moment you need something the canvas doesn't express, you are stuck and
+  your only move is to leave. A framework of primitives fails gradually and legibly: you hit
+  something it doesn't do, you write it, and it becomes part of your codebase. The second failure
+  mode is survivable. The first one has ended a lot of projects.
+</p>
+
+<h2>What you actually spend your time on</h2>
+<p>
+  With the list at the top of this article already handled, a new feature in Tiknix is usually
+  three things: a controller method, a view, and a permission row. Adding a "projects" section to
+  an app looks like this:
+</p>
+<pre><code>// controls/Projects.php — /projects and /projects/create
+namespace app;
+
+use \Flight as Flight;
+use \RedBeanPHP\R as R;
+
+class Projects extends BaseControls\Control {
+
+    public function index() {
+        if (!$this->requireLogin()) return;
+
+        $projects = R::find('project', 'member_id = ? ORDER BY created_at DESC',
+                            [Flight::get('member')['id']]);
+
+        $this->render('projects/index', [
+            'title'    => 'Projects',
+            'projects' => $projects,
+        ]);
+    }
+}</code></pre>
+<p>
+  There is no route registration, no dependency injection wiring, no schema migration, and no
+  auth check beyond one line. The <code>project</code> table does not exist yet; RedBeanPHP will
+  create it the first time you store one. The URL <code>/projects</code> already resolves. That is
+  what inheriting primitives buys: the interesting part of the work starts on line one.
+</p>
+
+<h2>The trade you are making</h2>
+<p>
+  You are trading <em>freedom of architecture</em> for <em>speed and coherence</em>. If you adopt
+  Tiknix, you are adopting its opinions: FlightPHP's request model, RedBeanPHP's bean semantics,
+  numeric permission levels where lower means more powerful, controllers as the unit of routing.
+  Those opinions are not universally correct. They are internally consistent, which for most
+  projects is worth more.
+</p>
+
+<div class="callout callout-honest">
+  <span class="callout-title">Honest notes</span>
+  <ul>
+    <li><strong>Opinions are load-bearing.</strong> Fighting the conventions — custom routing everywhere, raw SQL instead of beans — removes most of the benefit while keeping all of the constraints. If you disagree with the conventions, use something else rather than half-adopting this.</li>
+    <li><strong>Reading is still required.</strong> "You don't have to write it" is not "you don't have to understand it." Before you ship an auth system you did not write, read <code>controls/Auth.php</code> end to end. It is worth the hour.</li>
+    <li><strong>The default install is a development install.</strong> Build mode on, a known admin password, debug output enabled. Those defaults are correct for your laptop and wrong for the internet — see <a href="/production-checklist.html">the production checklist</a>.</li>
+    <li><strong>Some included modules are starting points, not finished products.</strong> The contact form and help center are working scaffolds meant to be shaped to your domain, not polished SaaS features.</li>
+  </ul>
+</div>
+
+<p>
+  The rest of this series walks through the primitives one at a time — what each one does, the
+  code that does it, and where its edges are. Next up: <a href="/php-sqlite-substrate.html">why
+  the substrate is PHP and SQLite</a>, which is a choice people have opinions about.
+</p>

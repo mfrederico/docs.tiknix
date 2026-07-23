@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Login You Don&#x27;t Have to Write — Tiknix Docs</title>
+<meta name="description" content="Registration, sessions, password hashing, reset flows, Google OAuth, CSRF, rate limiting — shipped, wired, and already exercised.">
+<link rel="icon" href="/img/tiknix.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Figtree:ital,wght@0,300..900;1,300..900&family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,100..900,0..100&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/docs.css">
+<script src="/assets/docs.js"></script>
+</head>
+<body>
+<div class="shell">
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+<aside class="sidebar" id="sidebar">
+  <a class="sidebar-brand" href="/index.html">
+    <span class="brand-logo"></span>
+    <span class="brand-word">tiknix</span>
+    <span class="brand-sub">docs</span>
+  </a>
+  <nav class="nav">
+    <div class="nav-heading">Index</div>
+    <a class="nav-link" href="/index.html"><span class="nav-num">&#9737;</span>All articles</a>
+    <div class="nav-heading">Foundations</div>
+    <a class="nav-link" href="/build-on-primitives.html"><span class="nav-num">01</span>Start From Primitives, Not From Scratch</a>
+    <a class="nav-link" href="/php-sqlite-substrate.html"><span class="nav-num">02</span>Why PHP and SQLite Are a Serious Choice in 2026</a>
+    <a class="nav-link" href="/membership-and-settings.html"><span class="nav-num">03</span>The Members Table Is the Spine</a>
+    <a class="nav-link" href="/convention-routing.html"><span class="nav-num">04</span>Convention-Based Routing: A URL Is a Method Name</a>
+    <a class="nav-link" href="/data-without-migrations.html"><span class="nav-num">05</span>Modeling Data Without a Migration Backlog</a>
+    <a class="nav-link" href="/bootstrap-design-primitive.html"><span class="nav-num">06</span>Bootstrap as a Design Primitive</a>
+    <div class="nav-heading">Security &amp; Access</div>
+    <a class="nav-link active" href="/authentication-included.html"><span class="nav-num">07</span>The Login You Don&#x27;t Have to Write</a>
+    <a class="nav-link" href="/two-factor-included.html"><span class="nav-num">08</span>Two-Factor Authentication as a Config Switch</a>
+    <a class="nav-link" href="/permissions-as-data.html"><span class="nav-num">09</span>Permissions as Data, Not If-Statements</a>
+    <a class="nav-link" href="/teams-and-ownership.html"><span class="nav-num">10</span>Teams, Ownership, and Sharing Work Safely</a>
+    <div class="nav-heading">Building with AI</div>
+    <a class="nav-link" href="/codebase-map-for-agents.html"><span class="nav-num">11</span>Give Your AI Assistant a Map, Not a Flashlight</a>
+    <a class="nav-link" href="/mcp-gateway.html"><span class="nav-num">12</span>MCP as a Primitive: One Endpoint for Every Agent</a>
+    <a class="nav-link" href="/agent-orchestration.html"><span class="nav-num">13</span>Plan With the Expensive Model, Execute With the Cheap One</a>
+    <a class="nav-link" href="/pipelines.html"><span class="nav-num">14</span>Pipelines: Automation That Ships With the App</a>
+    <a class="nav-link" href="/scaffolding-and-reuse.html"><span class="nav-num">15</span>Scaffolding Is a Reading Exercise</a>
+    <div class="nav-heading">Operations</div>
+    <a class="nav-link" href="/data-integration.html"><span class="nav-num">16</span>Five Ways Data Crosses the Boundary</a>
+    <a class="nav-link" href="/connections-and-broker-keys.html"><span class="nav-num">17</span>Third-Party Credentials Without Sprawl</a>
+    <a class="nav-link" href="/caching-by-default.html"><span class="nav-num">18</span>Caching You Don&#x27;t Have to Think About</a>
+    <a class="nav-link" href="/feature-flags-and-sidecars.html"><span class="nav-num">19</span>Growing Without Bloating the Core</a>
+    <a class="nav-link" href="/production-checklist.html"><span class="nav-num">20</span>From Localhost to Production: The Honest Checklist</a>
+  </nav>
+  <div class="sidebar-foot">
+    Written against the Tiknix source. <a href="/index.html">All articles</a>
+  </div>
+</aside>
+<div class="main">
+  <header class="topbar">
+    <button class="btn-icon menu-toggle" id="menuToggle" type="button" aria-label="Open menu">&#9776;</button>
+    <div class="topbar-title">
+      <span class="eyebrow">Security &amp; Access</span>
+      <strong>The Login You Don&#x27;t Have to Write</strong>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-icon" id="themeToggle" type="button" aria-label="Toggle theme"><span id="themeIcon">&#9728;</span></button>
+    </div>
+  </header>
+  <main class="content">
+    <article class="narrow">
+      <header class="article-header">
+        <div class="meta">
+          <span class="chip chip-security">Security &amp; Access</span>
+          <span class="eyebrow">Article 07 of 20</span>
+          <span class="eyebrow">9 min read</span>
+        </div>
+        <h1>The Login You Don&#x27;t Have to Write</h1>
+        <p class="lede">Registration, sessions, password hashing, reset flows, Google OAuth, CSRF, rate limiting — shipped, wired, and already exercised.</p>
+      </header>
+      <div class="article-body">
+<p>
+  Authentication is the most-written and least-differentiated code in the industry. Every
+  application needs it, every implementation looks roughly the same, and the differences between a
+  good one and a bad one are almost entirely in details that are invisible until they're
+  catastrophic.
+</p>
+<p>
+  Tiknix ships one. Not a tutorial, not a scaffold you finish — a working system in
+  <code>controls/Auth.php</code> that has been exercised across the framework's own admin panel,
+  member area, and API surface. This article walks through what it actually does, because the
+  point of inheriting an auth system is being able to inspect it.
+</p>
+
+<h2>What's included</h2>
+<ul>
+  <li><strong>Registration</strong> at <code>/auth/register</code> — username, email, password, active immediately, auto-login, no verification email required.</li>
+  <li><strong>Login</strong> at <code>/auth/login</code> — accepts a username <em>or</em> an email in the same field.</li>
+  <li><strong>Logout</strong> that actually destroys the session and expires the cookie.</li>
+  <li><strong>Password reset</strong> — token-issuing forgot flow plus a reset form, with mail delivery via <code>lib/Mailer.php</code>.</li>
+  <li><strong>Google OAuth 2.0</strong> — one-click sign-in, implemented as a drop-in plugin at <code>lib/plugins/GoogleAuth.php</code>.</li>
+  <li><strong>Two-factor auth</strong> — TOTP, covered in <a href="/two-factor-included.html">its own article</a>.</li>
+  <li><strong>Rate limiting</strong> on login, registration, and password reset.</li>
+  <li><strong>CSRF protection</strong> via a session token and a <code>csrf_field()</code> view helper.</li>
+  <li><strong>An admin toggle</strong> for whether public self-registration is open at all.</li>
+</ul>
+
+<h2>The login path, step by step</h2>
+<p>Reading the real flow is more informative than a feature list:</p>
+<ol>
+  <li>
+    <strong>Rate limit first.</strong> Five attempts per five minutes. Exceeded, the user gets a
+    retry-after message rather than another guess. The check happens before any database lookup,
+    so a flood costs almost nothing to reject.
+  </li>
+  <li>
+    <strong>Look up an active member</strong> by username or email, with the status condition in
+    the query rather than checked afterward — a disabled account cannot log in even if the
+    password is right.
+  </li>
+  <li>
+    <strong>Handle OAuth-only accounts explicitly.</strong> A member who registered via Google has
+    no password hash. Rather than failing with a confusing "invalid credentials," they are told to
+    use the Google button.
+  </li>
+  <li>
+    <strong>Verify with <code>password_verify()</code></strong> against a
+    <code>password_hash()</code> digest created with <code>PASSWORD_DEFAULT</code>. Timing-safe
+    comparison, algorithm chosen by the runtime, upgradeable as PHP's default improves.
+  </li>
+  <li>
+    <strong>Record the login</strong> — <code>lastLogin</code> and <code>loginCount</code> — and
+    clear the rate limiter on success, so a legitimate user who fumbled twice is not penalized.
+  </li>
+  <li>
+    <strong>Branch to 2FA if required</strong>, holding only a pending member id in the session.
+    The full session is <em>not</em> established until the second factor passes.
+  </li>
+  <li>
+    <strong>Establish the session</strong> and redirect to the originally requested URL.
+  </li>
+</ol>
+<p>
+  Two details worth calling out. Failed logins produce an identical <em>user-facing</em> message
+  whether the account exists or the password was wrong — no user enumeration through the login
+  form. And the distinction is preserved in the log, where operators need it, with different
+  warning messages for "user not found" and "wrong password."
+</p>
+
+<h2>Passwords</h2>
+<p>
+  Registration requires a username of at least 3 characters and a password of at least 8. Password
+  reset applies the same 8-character floor. Storage is <code>password_hash($password, PASSWORD_DEFAULT)</code>
+  throughout — no bespoke hashing, no pepper, no home-grown key stretching, no MD5 lurking in a
+  legacy branch.
+</p>
+<p>
+  That is a deliberately conservative baseline rather than a complete policy. Length is the only
+  strength requirement enforced, and there is no breach-list check. If your threat model needs
+  more, add it in one place — the validation block in <code>register()</code> and
+  <code>reset()</code>.
+</p>
+
+<h2>Rate limiting, and its real boundary</h2>
+<p>
+  <code>lib/RateLimiter.php</code> is a small, readable session-backed limiter with a clean API:
+</p>
+<pre><code>if (!RateLimiter::check('login', 5, 300)) {
+    $minutes = ceil(RateLimiter::retryAfter('login', 300) / 60);
+    // ...refuse, tell the user when to come back
+}
+
+RateLimiter::clear('login');   // on success</code></pre>
+<p>Current limits:</p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Action</th><th>Attempts</th><th>Window</th></tr></thead>
+  <tbody>
+    <tr><td>Login</td><td>5</td><td>5 minutes</td></tr>
+    <tr><td>Registration</td><td>5</td><td>1 hour</td></tr>
+    <tr><td>Forgot password</td><td>3</td><td>15 minutes</td></tr>
+  </tbody>
+</table>
+</div>
+<p>
+  Be precise about what this protects against. Session-backed limiting stops an ordinary attacker
+  hammering a form in a browser or a naive script that keeps cookies. It does <em>not</em> stop a
+  distributed attempt from many clients that each start a fresh session. For that you want limits
+  at the edge — a reverse proxy, a WAF, or fail2ban on the access log. The in-app limiter is a
+  useful first layer, not the last one.
+</p>
+
+<h2>CSRF</h2>
+<p>
+  <code>lib/SimpleCsrf.php</code> takes the simple road: one 32-byte random token per session,
+  valid for every form, no per-form or per-URI tokens. In a view:
+</p>
+<pre><code>&lt;form method="post" action="/projects/save"&gt;
+    &lt;?= csrf_field() ?&gt;
+    ...
+&lt;/form&gt;</code></pre>
+<p>And for fetch-based requests, send <code>csrf_token()</code> as the <code>X-CSRF-TOKEN</code> header.</p>
+<p>
+  Per-form tokens are marginally stronger against certain replay scenarios. Per-session tokens are
+  dramatically more likely to be applied consistently across every form in the app — including the
+  ones an agent writes at 3am. That trade is the right one, but it is a trade, and worth knowing
+  you made it.
+</p>
+
+<h2>OAuth as a plugin, not a fork</h2>
+<p>
+  Google sign-in lives in <code>lib/plugins/GoogleAuth.php</code>. It is a drop-in: configure
+  credentials, and the button appears in the login view. Nothing in the core login path was
+  restructured to accommodate it — the OAuth-account branch in <code>login()</code> is three lines.
+</p>
+<p>
+  That is the shape to copy when you add a second provider. An identity provider should be a file
+  you add, not a refactor you perform.
+</p>
+
+<h2>Sessions</h2>
+<p>
+  The session hardening is applied in code, at startup, not left to a config block you might forget.
+  On boot, Tiknix sets:
+</p>
+<pre><code>session.use_only_cookies = 1
+session.use_strict_mode  = 1        ; reject attacker-supplied session ids
+session.cookie_httponly  = 1        ; JS can't read the cookie
+session.cookie_samesite  = 'Lax'
+// and, only when environment = production:
+session.cookie_secure    = 1        ; HTTPS-only cookie</code></pre>
+<p>
+  The important design point: <strong>the secure-cookie flag is driven by <code>environment</code>,
+  not by a standalone <code>secure</code> setting.</strong> Set <code>[app] environment = production</code>
+  — which you do for any real deployment — and the cookie is marked Secure automatically. In a
+  non-production environment it is left off so local HTTP development works. There is no separate
+  switch to remember to flip.
+</p>
+<p>
+  On login, the exported member row goes into <code>$_SESSION['member']</code>; on logout, the
+  session array is cleared, the cookie is expired with a past date, and the session is destroyed
+  before a fresh one starts for the flash message. That last part is a detail a lot of hand-rolled
+  logouts get wrong.
+</p>
+
+<div class="callout callout-honest">
+  <span class="callout-title">Honest notes</span>
+  <ul>
+    <li><strong>Secure cookies follow <code>environment</code>.</strong> There is no <code>secure = false</code> default to trip over — the flag is on whenever <code>environment = production</code> and off otherwise. The one thing to get right is therefore the same thing you already have to get right for debug output and everything else: set <code>environment = production</code> on real deployments. If you never do local HTTP development, it is on everywhere that matters.</li>
+    <li><strong>No email verification by default.</strong> Accounts are active immediately — great for internal tools and friction-sensitive signups, wrong for anything where an unverified email address can cause harm. The <code>Mailer</code> is already wired; adding a verification step is a bounded piece of work.</li>
+    <li><strong>The session is a snapshot.</strong> <code>$_SESSION['member']</code> is the member row as of login. Change someone's level and their <em>current</em> session may keep the old one until they log in again. For privilege changes that must take effect immediately, re-read the member or terminate the session.</li>
+    <li><strong>Rate limiting is session-scoped.</strong> See above — pair it with edge limiting for anything internet-facing.</li>
+    <li><strong>Password policy is length-only.</strong> No complexity rules, no breach-list lookup, no rotation. Deliberate, defensible, and yours to extend.</li>
+    <li><strong>The installer sets your admin password — it does not ship <code>admin123</code>.</strong> Running <code>install.sh</code> prompts you for an admin password (or generates a random one in <code>--auto</code> mode) and writes that hash to the database. The well-known <code>admin123</code> default only exists if you bypass the installer and run <code>database/init.php</code> by hand; if you take that path, change it immediately. The normal install experience never exposes it.</li>
+  </ul>
+</div>
+      </div>
+      <nav class="article-nav">
+        <a class="prev" href="/bootstrap-design-primitive.html"><span class="dir">&#8592; Previous</span><span class="ttl">Bootstrap as a Design Primitive</span></a><a class="next" href="/two-factor-included.html"><span class="dir">Next &#8594;</span><span class="ttl">Two-Factor Authentication as a Config Switch</span></a>
+      </nav>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="brand-logo footer-logo"></span>
+        <div>
+          <div class="footer-word">tiknix</div>
+          <div class="footer-tag">Build on primitives that already work</div>
+        </div>
+      </div>
+      <nav class="footer-links">
+        <a href="https://tiknix.com">Homepage</a>
+        <a href="https://github.com/mfrederico/tiknix">GitHub</a>
+        <a href="https://github.com/mfrederico/tiknix-tutorials">Tutorials</a>
+        <a href="/index.html">All articles</a>
+      </nav>
+    </div>
+    <div class="footer-fine">
+      Documentation written against the Tiknix source. Tiknix is released under the MIT License.
+    </div>
+  </footer>
+</div>
+</div>
+</body>
+</html>

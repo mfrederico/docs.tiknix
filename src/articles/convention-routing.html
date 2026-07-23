@@ -1,0 +1,156 @@
+<p>
+  Most frameworks ask you to maintain a route table: a file that maps URL patterns to handlers,
+  which you edit every time you add a page. It is a small tax, paid forever, and it drifts — the
+  route file says one thing, the controller says another, and the truth is whichever one ran last.
+</p>
+<p>
+  Tiknix takes the other approach. There is one route registration in the entire application, and
+  it looks like this:
+</p>
+<pre><code>// routes/default.php
+Flight::defaultRoute();</code></pre>
+<p>That single line handles every URL in the app.</p>
+
+<h2>The rule</h2>
+<p>The URL shape is <code>/controller/method/operation/id</code>, and each segment is optional:</p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>URL</th><th>Resolves to</th></tr></thead>
+  <tbody>
+    <tr><td><code>/</code></td><td><code>Index-&gt;index()</code></td></tr>
+    <tr><td><code>/dashboard</code></td><td><code>Dashboard-&gt;index()</code></td></tr>
+    <tr><td><code>/auth/login</code></td><td><code>Auth-&gt;login()</code></td></tr>
+    <tr><td><code>/member/profile</code></td><td><code>Member-&gt;profile()</code></td></tr>
+    <tr><td><code>/blog/post/edit/123</code></td><td><code>Blog-&gt;post()</code> with operation <code>edit</code>, id <code>123</code></td></tr>
+  </tbody>
+</table>
+</div>
+<p>
+  Missing segments default to <code>index</code>. The controller class is the capitalized first
+  segment, resolved inside the app namespace. The trailing segments arrive as a parsed
+  <code>operation</code> object rather than as positional arguments:
+</p>
+<pre><code>public function post($params) {
+    $action = $params['operation']->name;   // 'edit'
+    $id     = $params['operation']->type;   // '123'
+}</code></pre>
+<p>
+  The segments arrive by <em>name</em>, not by numeric position — there is no
+  <code>$params[0]</code>/<code>$params[1]</code> array of path parts. You get an
+  <code>operation</code> object (<code>->name</code> is the segment after the method,
+  <code>->type</code> is the one after that) and a <code>route</code> string holding anything
+  beyond those. The base controller wraps the two most common reads as helpers:
+</p>
+<pre><code>$id   = $this->opId();     // /product/edit/5  -> '5'
+$type = $this->opType();   // the segment after opId
+// $params['route'] holds any remaining path beyond opId, as a string.</code></pre>
+<p>
+  Note that <code>$this->getParam('x')</code> is a different thing: it reads POST body, query
+  string, and <code>$_REQUEST</code> — the request's <em>data</em>, not the URL's path segments.
+  Path segments come from <code>operation</code>/<code>route</code>; form and query values come from
+  <code>getParam()</code>.
+</p>
+<p>
+  Creating a route means creating a method. Deleting a route means deleting a method. There is no
+  second place for the two to disagree.
+</p>
+
+<h2>What the dispatcher actually enforces</h2>
+<p>
+  The convention is simple, but the dispatch path is not naive. Before Tiknix calls anything, it
+  runs four checks in order — worth knowing precisely, because the security of the whole app rests
+  on them.
+</p>
+<ol>
+  <li>
+    <strong>Permission first, before instantiation.</strong> <code>Flight::permissionFor()</code>
+    consults the <code>authcontrol</code> table (through the permission cache) using the current
+    member's level. A denied request never constructs the controller. See
+    <a href="/permissions-as-data.html">Permissions as Data</a> for how those rows work.
+  </li>
+  <li>
+    <strong>The class must exist.</strong> Otherwise: 404, logged.
+  </li>
+  <li>
+    <strong>The class file must live under <code>controls/</code>.</strong> Only real controllers
+    are routable — the dispatcher checks the resolved file's path and refuses anything outside the
+    controllers directory. It is a directory check rather than an allowlist, so new controllers work
+    automatically with no list to maintain, and internal libraries stay unreachable from a URL.
+  </li>
+  <li>
+    <strong>The method must exist and be public.</strong> Private and protected methods are not
+    reachable from a URL, which is how you write controller helpers safely.
+  </li>
+</ol>
+<p>
+  If the method does not exist but the controller defines <code>_fallback()</code>, the request is
+  handed there instead — that is the hook for pretty URLs like <code>/products/blue-widget</code>,
+  where the second segment is data rather than a method name.
+</p>
+<p>
+  Anything that throws inside a controller is caught, logged, optionally reported, and turned into
+  a 404 rather than a stack trace on a user's screen.
+</p>
+
+<h2>Why this is unusually good for agent-written code</h2>
+<p>
+  Convention routing removes an entire category of coordination. When an AI assistant adds a
+  feature, it does not have to find the route file, infer its format, insert an entry in the right
+  place, and keep it consistent with a controller in another directory. It writes one method in
+  one file and the URL exists.
+</p>
+<p>
+  It also makes the codebase <em>self-describing</em>. You do not need to read a route table to
+  know what the app exposes; the list of public methods across <code>controls/</code> <strong>is</strong>
+  the list of endpoints. Tiknix's own introspection tooling relies on exactly that — the
+  <code>describe</code> MCP tool reports a controller's routes and permission levels by reading the
+  class, because the class is the source of truth. (See
+  <a href="/codebase-map-for-agents.html">Give Your AI Assistant a Map</a>.)
+</p>
+
+<h2>The same controllers run on the command line</h2>
+<p>
+  Because a route is just a method, cron jobs and CLI scripts do not need a parallel command
+  framework. <code>lib/CliHandler.php</code> detects CLI execution and dispatches to the same
+  controllers:
+</p>
+<pre><code>php public/index.php --control=cleanup --method=daily --member=1 --cron</code></pre>
+<p>
+  One implementation, two entry points. A method you can call from a URL you can also schedule,
+  and it behaves identically because it <em>is</em> identical.
+</p>
+
+<h2>When you want a real route</h2>
+<p>
+  Convention routing does not lock out explicit routes. <a href="https://flightphp.com/">FlightPHP</a>
+  is underneath, so anything it
+  supports still works — add a file in <code>routes/</code> for versioned APIs, webhooks with
+  fixed paths, or patterns the convention cannot express:
+</p>
+<pre><code>// routes/api.php
+Flight::route('/api/v1/users',      ['Api', 'users']);
+Flight::route('/api/v1/posts/@id',  ['Api', 'post']);</code></pre>
+<p>
+  Use this deliberately and sparingly. Every explicit route is a place where the URL and the code
+  can drift apart again — which is the tax the convention was designed to remove.
+</p>
+
+<div class="callout callout-tip">
+  <span class="callout-title">Practical tip</span>
+  <p>
+    Name methods for the URL you want, not for the code that's inside them. <code>publicprofile()</code>
+    is a fine method name if <code>/member/publicprofile</code> is the URL you want users to see.
+    In this framework, method naming <em>is</em> URL design.
+  </p>
+</div>
+
+<div class="callout callout-honest">
+  <span class="callout-title">Honest notes</span>
+  <ul>
+    <li><strong>Every public method is a potential endpoint.</strong> That is the deal. A public helper on a controller is reachable at a URL, so helpers belong in <code>private</code>/<code>protected</code> methods or in <code>lib/</code>. Treat "should this be public?" as a security question, not a style question.</li>
+    <li><strong>PHP method names are case-insensitive.</strong> A convention of "uppercase methods aren't routable" is not enforced by the language — <code>/example/processinternal</code> will reach <code>ProcessInternal()</code>. Use visibility, not capitalization, to keep something off the web.</li>
+    <li><strong>A route with no permission row defaults to public — and this is not just a build-mode thing.</strong> It is worth being exact, because it is easy to assume the open behavior only applies while <code>build_mode</code> is on. It does not. With build mode <em>on</em>, an unknown route auto-creates a permission row and allows the request. With build mode <em>off</em>, an unknown route still resolves to <code>PUBLIC</code> (the permission check falls through to <code>level &lt;= 101</code>, which every visitor satisfies). Either way, a missing row is an open door, not a locked one. Audit your <code>authcontrol</code> rows before you ship, and read <a href="/production-checklist.html">the checklist</a>.</li>
+    <li><strong>URLs and refactoring are coupled.</strong> Renaming a controller or a method changes public URLs and orphans its permission rows. Plan renames like the breaking changes they are, and leave a redirect if the URL was ever shared.</li>
+    <li><strong>Deep hierarchies don't fit.</strong> The convention is two levels plus two data segments. Genuinely nested resources (<code>/teams/7/projects/3/tasks</code>) want an explicit route or a <code>_fallback()</code>.</li>
+  </ul>
+</div>

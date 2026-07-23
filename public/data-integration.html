@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Five Ways Data Crosses the Boundary — Tiknix Docs</title>
+<meta name="description" content="Outbound connectors, inbound API keys, signed webhooks, two-way email threads, and pipelines — sharing one set of auth, logging, and revocation machinery.">
+<link rel="icon" href="/img/tiknix.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Figtree:ital,wght@0,300..900;1,300..900&family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,100..900,0..100&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/docs.css">
+<script src="/assets/docs.js"></script>
+</head>
+<body>
+<div class="shell">
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+<aside class="sidebar" id="sidebar">
+  <a class="sidebar-brand" href="/index.html">
+    <span class="brand-logo"></span>
+    <span class="brand-word">tiknix</span>
+    <span class="brand-sub">docs</span>
+  </a>
+  <nav class="nav">
+    <div class="nav-heading">Index</div>
+    <a class="nav-link" href="/index.html"><span class="nav-num">&#9737;</span>All articles</a>
+    <div class="nav-heading">Foundations</div>
+    <a class="nav-link" href="/build-on-primitives.html"><span class="nav-num">01</span>Start From Primitives, Not From Scratch</a>
+    <a class="nav-link" href="/php-sqlite-substrate.html"><span class="nav-num">02</span>Why PHP and SQLite Are a Serious Choice in 2026</a>
+    <a class="nav-link" href="/membership-and-settings.html"><span class="nav-num">03</span>The Members Table Is the Spine</a>
+    <a class="nav-link" href="/convention-routing.html"><span class="nav-num">04</span>Convention-Based Routing: A URL Is a Method Name</a>
+    <a class="nav-link" href="/data-without-migrations.html"><span class="nav-num">05</span>Modeling Data Without a Migration Backlog</a>
+    <a class="nav-link" href="/bootstrap-design-primitive.html"><span class="nav-num">06</span>Bootstrap as a Design Primitive</a>
+    <div class="nav-heading">Security &amp; Access</div>
+    <a class="nav-link" href="/authentication-included.html"><span class="nav-num">07</span>The Login You Don&#x27;t Have to Write</a>
+    <a class="nav-link" href="/two-factor-included.html"><span class="nav-num">08</span>Two-Factor Authentication as a Config Switch</a>
+    <a class="nav-link" href="/permissions-as-data.html"><span class="nav-num">09</span>Permissions as Data, Not If-Statements</a>
+    <a class="nav-link" href="/teams-and-ownership.html"><span class="nav-num">10</span>Teams, Ownership, and Sharing Work Safely</a>
+    <div class="nav-heading">Building with AI</div>
+    <a class="nav-link" href="/codebase-map-for-agents.html"><span class="nav-num">11</span>Give Your AI Assistant a Map, Not a Flashlight</a>
+    <a class="nav-link" href="/mcp-gateway.html"><span class="nav-num">12</span>MCP as a Primitive: One Endpoint for Every Agent</a>
+    <a class="nav-link" href="/agent-orchestration.html"><span class="nav-num">13</span>Plan With the Expensive Model, Execute With the Cheap One</a>
+    <a class="nav-link" href="/pipelines.html"><span class="nav-num">14</span>Pipelines: Automation That Ships With the App</a>
+    <a class="nav-link" href="/scaffolding-and-reuse.html"><span class="nav-num">15</span>Scaffolding Is a Reading Exercise</a>
+    <div class="nav-heading">Operations</div>
+    <a class="nav-link active" href="/data-integration.html"><span class="nav-num">16</span>Five Ways Data Crosses the Boundary</a>
+    <a class="nav-link" href="/connections-and-broker-keys.html"><span class="nav-num">17</span>Third-Party Credentials Without Sprawl</a>
+    <a class="nav-link" href="/caching-by-default.html"><span class="nav-num">18</span>Caching You Don&#x27;t Have to Think About</a>
+    <a class="nav-link" href="/feature-flags-and-sidecars.html"><span class="nav-num">19</span>Growing Without Bloating the Core</a>
+    <a class="nav-link" href="/production-checklist.html"><span class="nav-num">20</span>From Localhost to Production: The Honest Checklist</a>
+  </nav>
+  <div class="sidebar-foot">
+    Written against the Tiknix source. <a href="/index.html">All articles</a>
+  </div>
+</aside>
+<div class="main">
+  <header class="topbar">
+    <button class="btn-icon menu-toggle" id="menuToggle" type="button" aria-label="Open menu">&#9776;</button>
+    <div class="topbar-title">
+      <span class="eyebrow">Operations</span>
+      <strong>Five Ways Data Crosses the Boundary</strong>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-icon" id="themeToggle" type="button" aria-label="Toggle theme"><span id="themeIcon">&#9728;</span></button>
+    </div>
+  </header>
+  <main class="content">
+    <article class="narrow">
+      <header class="article-header">
+        <div class="meta">
+          <span class="chip chip-ops">Operations</span>
+          <span class="eyebrow">Article 16 of 20</span>
+          <span class="eyebrow">11 min read</span>
+        </div>
+        <h1>Five Ways Data Crosses the Boundary</h1>
+        <p class="lede">Outbound connectors, inbound API keys, signed webhooks, two-way email threads, and pipelines — sharing one set of auth, logging, and revocation machinery.</p>
+      </header>
+      <div class="article-body">
+<p>
+  No application is an island, and the ways data crosses the boundary are more numerous than people
+  expect: an API someone calls, a webhook someone posts to, an email a customer replies to, a
+  scheduled job that pulls a file, an agent invoking a tool. Each one is an entry point. Each one
+  needs authentication, validation, logging, and a failure story.
+</p>
+<p>
+  Left to grow organically, each gets its own ad-hoc answer. Tiknix has five integration surfaces,
+  and the useful thing about them is that they share their machinery — the same key table, the same
+  encryption service, the same logs.
+</p>
+
+<h2>Surface 1 — Outbound: connections and connectors</h2>
+<p>
+  Calling someone else's API means holding their credential. That is handled by the connector
+  registry and the broker model, covered in detail in
+  <a href="/connections-and-broker-keys.html">Third-Party Credentials Without Sprawl</a>: encrypted
+  at rest with libsodium, one OAuth path for every registry-driven connector, tokens held only on
+  the control plane, and instances given revocable broker keys instead of the credentials
+  themselves.
+</p>
+<p>The property to carry forward: <strong>a credential lives in exactly one place, and everything else gets a capability.</strong></p>
+
+<h2>Surface 2 — Inbound API: keys, scopes, and one auth service</h2>
+<p>
+  When something calls <em>you</em>, <code>services/ApiAuthService.php</code> is the front door. It
+  reads a bearer token from <code>Authorization</code> (falling back to <code>X-Api-Key</code>),
+  validates the key row, loads the owning member, and bumps usage stats:
+</p>
+<pre><code>$auth = ApiAuthService::authenticate('invoice', 'read');
+if (!$auth['success']) {
+    Flight::jsonError($auth['error'], 401);
+    return;
+}
+$memberId = $auth['member_id'];</code></pre>
+<p>The validation chain is short and complete: token present → key exists and is active → not expired → owner exists → scope permits.</p>
+<p>Scopes are checked against a small pattern language — <code>*</code>, <code>&lt;bean&gt;.*</code>, <code>&lt;bean&gt;.&lt;action&gt;</code>, or a bare <code>&lt;action&gt;</code> — and the docblock is candid about the default:</p>
+<blockquote>
+  Scope checks are best-effort — an empty/absent scopes list allows all.
+</blockquote>
+<p>
+  Know that. A key created without scopes is a key that can do everything its owner can. The honest
+  documentation of a permissive default is worth more than a stricter default nobody knew about, but
+  set your scopes.
+</p>
+<p>
+  The important structural point is that this <em>mirrors</em> the API key auth in the MCP gateway
+  rather than inventing a second scheme. One <code>apikey</code> table, one revocation flag, one
+  place to see what exists. An agent calling MCP tools and a partner calling your JSON API are
+  managed identically.
+</p>
+
+<h2>Surface 3 — Inbound webhooks: verify, then decide what your status code means</h2>
+<p>
+  <code>controls/Webhook.php</code> receives inbound mail and delivery events from Mailgun. It is a
+  small file and an unusually good model for webhook handling.
+</p>
+<p><strong>It verifies the signature:</strong></p>
+<blockquote>
+  HMAC over (timestamp + token) against <code>[mail].mailgun_signing_key</code>, with a ±5 min
+  freshness window. With no signing key configured we accept unverified but log a warning (dev
+  only).
+</blockquote>
+<p>
+  Signature plus timestamp window is the correct pair — a signature alone permits replay. And the
+  unverified fallback is explicit, logged, and labeled as development-only rather than silently
+  permissive.
+</p>
+<p><strong>And it chooses status codes on purpose:</strong></p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Code</th><th>Situation</th><th>Effect on the sender</th></tr></thead>
+  <tbody>
+    <tr><td>403</td><td>Signature or auth failure</td><td>Mailgun retries — harmless</td></tr>
+    <tr><td>200</td><td>Unknown token or thread</td><td>Mailgun stops retrying — unrecoverable, don't loop</td></tr>
+    <tr><td>500</td><td>Storage failure</td><td>Mailgun retries with backoff — transient, try again</td></tr>
+  </tbody>
+</table>
+</div>
+<p>
+  This is the detail most webhook endpoints get wrong. A status code is not decoration; it is an
+  instruction to the sender's retry machinery. Return 500 for an unrecoverable condition and you
+  have built a retry storm against yourself. Return 200 for a transient failure and you have
+  silently dropped data.
+</p>
+<p>
+  Every webhook you write should have this table written down. If you cannot say what each code
+  tells the sender to do, you have not finished the endpoint.
+</p>
+
+<h2>Surface 4 — Two-way email as a data channel</h2>
+<p>
+  <code>services/NotifyService.php</code> is the piece people do not expect: threaded, two-way email
+  as a one-liner.
+</p>
+<pre><code>NotifyService::create()
+    ->to('dealer@example.com', 'Dealer Name')
+    ->subject('Your Order #42')
+    ->relatedTo('order', 42)      // polymorphic link + thread-reuse key
+    ->owner($memberId)            // who monitors this thread in the inbox
+    ->send('&lt;p&gt;Hello&lt;/p&gt;', ['/path/to/invoice.pdf']);</code></pre>
+<p>The recipient replies from their own mail client. That reply hits the Mailgun webhook, is matched to the thread by a token baked into the reply address (<code>reply-{token}@domain</code>), and lands back in the app on the same conversation — visible in the in-app inbox at <code>/communications</code>.</p>
+<p>Three design choices make this more than a mail wrapper:</p>
+<ul>
+  <li>
+    <strong><code>relatedTo(type, id)</code> is polymorphic.</strong> Any domain object attaches to a
+    thread. The comms subsystem never learns what an order is; it owns the channel, and the
+    consuming code owns the meaning.
+  </li>
+  <li>
+    <strong>The record is written regardless of delivery.</strong> Every send writes an outbound row
+    and reuses a thread even when mail is disabled or demo mode is on. The conversation is complete
+    in-app whether or not an email left the building — so tests and demos run offline, and the audit
+    trail never has holes.
+  </li>
+  <li>
+    <strong>Threads have an owner.</strong> Root sees everything; everyone else, admins included,
+    sees only threads they own. Customer conversations are private by default rather than by
+    convention.
+  </li>
+</ul>
+<p>
+  There is a fourth capability worth noting: <code>lib/PublicLink.php</code> resolves a reply token
+  to its thread, letting you expose a token-gated page with no login at all — an approval screen, a
+  status page, a document view. The link in the email becomes the authentication. Comms deliberately
+  imposes no TTL on those tokens; expiry, if you need it, is your domain's decision (compare against
+  a deadline on the related record).
+</p>
+
+<h2>Surface 5 — Pipelines as the integration glue</h2>
+<p>
+  Multi-step integrations belong in a <a href="/pipelines.html">pipeline</a>: an <code>http</code>
+  step to call out, a <code>connection</code> step to use stored credentials without ever naming
+  them, a <code>dbquery</code> step to persist, a <code>branch</code> to handle the unhappy path, a
+  <code>notify</code> to tell someone, and a <code>wait</code> for anything asynchronous.
+</p>
+<p>
+  The integration then lives in the repository as JSON — reviewable, diffable, deployable, and
+  revertable — instead of as an external automation nobody can roll back.
+</p>
+
+<h2>What ties them together</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Concern</th><th>Shared mechanism</th></tr></thead>
+  <tbody>
+    <tr><td>Who is calling?</td><td>The <code>apikey</code> table — same rows for MCP and REST</td></tr>
+    <tr><td>Which credential?</td><td><code>connections</code>, encrypted via <code>EncryptionService</code></td></tr>
+    <tr><td>Is it authentic?</td><td>HMAC verification with a freshness window</td></tr>
+    <tr><td>What happened?</td><td><code>mcpusage</code>, <code>mcplog</code>, <code>notify</code>, <code>piperun</code>, Monolog</td></tr>
+    <tr><td>How do we stop it?</td><td>One <code>is_active</code> flag per key or connection</td></tr>
+  </tbody>
+</table>
+</div>
+<p>
+  That shared machinery is the actual asset. Any single integration is a day of work. Twenty
+  integrations that each invented their own auth, logging, and revocation is a system nobody can
+  audit — and the reason "who has access to our Shopify data?" becomes an unanswerable question at
+  most companies.
+</p>
+
+<h2>The checklist for any new integration</h2>
+<ol>
+  <li><strong>Identity</strong> — which key or connection, owned by which member?</li>
+  <li><strong>Authenticity</strong> — signature or token, verified, with a timestamp window.</li>
+  <li><strong>Authorization</strong> — scopes set explicitly, not left empty.</li>
+  <li><strong>Idempotency</strong> — inbound calls will be delivered twice. Design for it.</li>
+  <li><strong>Status semantics</strong> — know what each code tells the sender to do.</li>
+  <li><strong>Logging</strong> — enough to reconstruct a bad day, with a retention policy.</li>
+  <li><strong>Revocation</strong> — one operation, doable in a hurry by someone who is stressed.</li>
+</ol>
+
+<div class="callout callout-honest">
+  <span class="callout-title">Honest notes</span>
+  <ul>
+    <li><strong>Empty scopes allow everything.</strong> Stated in the source, repeated here because it is the most likely way to over-grant an API key by accident.</li>
+    <li><strong>The comms subsystem is single-tenant by design.</strong> The reply-address format maps one token to one thread with no workspace segment. Multi-tenancy would need a wider local-part; the code reserves the slot but does not implement it.</li>
+    <li><strong>Public links have no expiry.</strong> Token-gated pages stay reachable until you add your own expiry check against the related record. Anyone with the link has access — treat those URLs as credentials.</li>
+    <li><strong>Mail is Mailgun-specific.</strong> Both the mailer and the comms layer assume Mailgun. Another provider means a new driver, not a config change.</li>
+    <li><strong>Webhooks with no signing key are accepted.</strong> Verification is skipped with a logged warning if <code>mailgun_signing_key</code> is unset — a development convenience that becomes an unauthenticated write endpoint if it reaches production unconfigured. Check it on deploy.</li>
+    <li><strong>Idempotency is your job.</strong> Nothing here deduplicates a redelivered webhook for you. If the same event arriving twice would double-charge someone, that check is yours to write.</li>
+    <li><strong>Retention is unset by default.</strong> Log tables grow forever. Decide how long you keep request bodies before the answer is "since launch."</li>
+  </ul>
+</div>
+      </div>
+      <nav class="article-nav">
+        <a class="prev" href="/scaffolding-and-reuse.html"><span class="dir">&#8592; Previous</span><span class="ttl">Scaffolding Is a Reading Exercise</span></a><a class="next" href="/connections-and-broker-keys.html"><span class="dir">Next &#8594;</span><span class="ttl">Third-Party Credentials Without Sprawl</span></a>
+      </nav>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="brand-logo footer-logo"></span>
+        <div>
+          <div class="footer-word">tiknix</div>
+          <div class="footer-tag">Build on primitives that already work</div>
+        </div>
+      </div>
+      <nav class="footer-links">
+        <a href="https://tiknix.com">Homepage</a>
+        <a href="https://github.com/mfrederico/tiknix">GitHub</a>
+        <a href="https://github.com/mfrederico/tiknix-tutorials">Tutorials</a>
+        <a href="/index.html">All articles</a>
+      </nav>
+    </div>
+    <div class="footer-fine">
+      Documentation written against the Tiknix source. Tiknix is released under the MIT License.
+    </div>
+  </footer>
+</div>
+</div>
+</body>
+</html>

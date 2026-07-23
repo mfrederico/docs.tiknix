@@ -1,0 +1,151 @@
+<p>
+  Every application accumulates automation. A lead comes in and needs to be scored, enriched, and
+  routed. A nightly job reconciles two systems. A webhook fires and three things should happen in
+  order, unless the second one fails, in which case something else should happen.
+</p>
+<p>
+  This logic usually ends up in one of two bad places: buried in a controller method that has
+  quietly become 400 lines, or exiled to an external automation service where it is invisible to
+  your version control, untestable locally, and one billing lapse away from silently stopping.
+</p>
+<p>
+  Tiknix pipelines are the third option — <strong>declarative JSON steps stored in the repository,
+  executed by the app itself</strong>.
+</p>
+
+<h2>A pipeline is a file</h2>
+<pre><code>{
+  "slug": "demo-hello",
+  "name": "Demo — hello",
+  "description": "shell -> transform -> branch -> notify",
+  "context_schema": { "who": { "type": "string", "required": true } },
+  "steps": [
+    { "name": "greet", "type": "shell",
+      "config": { "command": "echo '{\"greeting\":\"hello {context.who}\"}'" },
+      "on_success": "next", "on_fail": "exit" },
+
+    { "name": "extract", "type": "transform",
+      "config": { "mode": "jsonpath", "input": "{greet.output}", "path": "greeting" },
+      "on_success": "next" },
+
+    { "name": "checkn", "type": "branch",
+      "config": { "left": "{greet.output.n}", "op": "gte", "right": "40" },
+      "on_success": "goto:big", "on_fail": "goto:small" }
+  ]
+}</code></pre>
+<p>
+  It lives in <code>pipelines/</code>, next to the code it automates. It is in Git. It diffs. It
+  code-reviews. It ships with a deploy and rolls back with one. That last property is the whole
+  argument: <strong>automation that lives outside your repository is automation you cannot roll
+  back.</strong>
+</p>
+<p>Running one is a single call from any controller:</p>
+<pre><code>$result = \app\Pipeline\Runner::run('lead-triage', ['email' => $email]);</code></pre>
+
+<h2>The step types</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Type</th><th>Does</th></tr></thead>
+  <tbody>
+    <tr><td><code>http</code></td><td>Call an external API</td></tr>
+    <tr><td><code>dbquery</code></td><td>Read or write your own database</td></tr>
+    <tr><td><code>shell</code></td><td>Run a command</td></tr>
+    <tr><td><code>transform</code></td><td>Reshape data — JSONPath extraction or template rendering</td></tr>
+    <tr><td><code>branch</code></td><td>Compare values and jump</td></tr>
+    <tr><td><code>agent</code></td><td>Hand a step to an AI agent</td></tr>
+    <tr><td><code>mccall</code> / <code>mcpcall</code></td><td>Invoke an MCP tool</td></tr>
+    <tr><td><code>connection</code></td><td>Use a configured third-party connection</td></tr>
+    <tr><td><code>notify</code></td><td>Send a notification</td></tr>
+    <tr><td><code>wait</code></td><td>Pause; supports resuming later</td></tr>
+  </tbody>
+</table>
+</div>
+<p>
+  Two of those are worth dwelling on. <code>agent</code> means an AI step is a <em>step</em> — a
+  bounded unit with defined inputs and outputs sitting between deterministic steps, not a
+  free-floating assistant with access to everything. That is the right shape for putting a model in
+  production: it does one thing, its output feeds a known consumer, and the steps around it are
+  ordinary code.
+</p>
+<p>
+  <code>connection</code> means credentials never appear in the pipeline file. The step references
+  a connection by name; the encrypted token lives in the database
+  (see <a href="/connections-and-broker-keys.html">Third-Party Credentials Without Sprawl</a>).
+  A pipeline is safe to commit because there is nothing secret in it.
+</p>
+
+<h2>Data flows through references</h2>
+<p>Steps read each other's output with a simple reference syntax:</p>
+<ul>
+  <li><code>{context.who}</code> — a value the caller passed in</li>
+  <li><code>{greet.output}</code> — a previous step's whole output</li>
+  <li><code>{greet.output.n}</code> — a field within it</li>
+  <li><code>{time.date}</code> — a built-in</li>
+</ul>
+<p>
+  Flow control is per-step: <code>on_success</code> and <code>on_fail</code> each take
+  <code>next</code>, <code>exit</code>, or <code>goto:&lt;step&gt;</code>. That is enough for
+  sequences, conditionals, retries, and early exits, and it stops well short of being a programming
+  language — which is the correct place to stop. A pipeline you can read top to bottom is worth
+  more than one that can express anything.
+</p>
+<p>
+  <code>context_schema</code> declares what the pipeline requires from its caller, so a missing
+  input fails immediately and legibly rather than surfacing as an empty string four steps later.
+</p>
+
+<h2>Adding a step type is dropping a file</h2>
+<pre><code>// lib/Pipeline/StepRegistry.php — auto-discovery
+foreach (glob(__DIR__ . '/Steps/*Step.php') as $file) {
+    $cls = 'app\\Pipeline\\Steps\\' . basename($file, '.php');
+    // ...must implement StepInterface; indexed by its type() token
+}</code></pre>
+<p>
+  No registration list, no switch statement, no three places to update. Write
+  <code>Steps/SlackStep.php</code>, implement the interface, and <code>slack</code> is a valid step
+  type everywhere — in the runner, in the editor, and in the component list agents read.
+</p>
+<p>
+  The registry's docblock is candid about why it works this way: an earlier system had three
+  registries and they drifted. One source of truth, derived rather than duplicated, is the fix.
+  Each step declares rich <code>fields</code> once; the agent-facing config surface is
+  <em>derived</em> from those fields rather than maintained alongside them.
+</p>
+
+<h2>Pipelines are a first-class agent surface</h2>
+<p>
+  There is a full set of MCP tools for pipelines — <code>pipeline_list</code>,
+  <code>pipeline_get</code>, <code>pipeline_set</code>, <code>pipeline_run</code>,
+  <code>pipeline_run_get</code>, <code>pipeline_continue</code>, <code>pipeline_delete</code>, and
+  <code>pipeline_components</code>.
+</p>
+<p>
+  <code>pipeline_components</code> is the important one. It returns the schema of every available
+  step type, so an agent asked to "build me a lead triage flow" can enumerate its actual building
+  blocks and their real configuration fields instead of guessing at a format. The agent then writes
+  a JSON file — a reviewable artifact in a constrained format, not opaque code in a controller.
+</p>
+<p>
+  That is a considerably better division of labor than "let the agent write the automation
+  wherever." The format is small enough to validate, small enough for a human to read in thirty
+  seconds, and versioned like everything else.
+</p>
+
+<h2>Scheduling</h2>
+<p>
+  <code>lib/Pipeline/Cron.php</code> is a compact five-field cron matcher — <code>*</code>, lists,
+  ranges, and steps — driven by a tick that asks, once a minute, "does this expression fire now?"
+  Familiar syntax, no new scheduling concept to learn, and the schedule lives with the pipeline.
+</p>
+
+<div class="callout callout-honest">
+  <span class="callout-title">Honest notes</span>
+  <ul>
+    <li><strong>Synchronous by default.</strong> <code>Runner::run()</code> executes in-process. That is right for short pipelines and wrong for anything long — a web request should not wait on a five-minute flow. Use the async/queued path for those, and design steps to be short.</li>
+    <li><strong>The <code>shell</code> step is exactly as dangerous as it sounds.</strong> It executes commands with the web server's privileges. Never interpolate untrusted context into a command. Treat any pipeline containing a shell step as security-sensitive code in review.</li>
+    <li><strong>The fake-cron tick needs something to tick it.</strong> A minute-by-minute scheduler only runs if a real cron entry or supervisor invokes it. If pipelines "aren't firing," check that first.</li>
+    <li><strong>JSON is not a programming language, and shouldn't become one.</strong> When a pipeline grows loops, nested conditionals, and a dozen <code>goto</code>s, it is telling you the logic belongs in a controller or service that a pipeline step calls.</li>
+    <li><strong>Debugging spans two artifacts.</strong> A failure means reading the definition <em>and</em> the run record. Run history helps; a stack trace it is not.</li>
+    <li><strong>Agent steps are non-deterministic.</strong> The same input can produce different output. Validate an agent step's output before the next step consumes it, exactly as you would validate a third-party API response.</li>
+  </ul>
+</div>

@@ -1,0 +1,20 @@
+# Playwright MCP scratch output (screenshots, snapshots, console logs)
+.playwright-mcp/
+
+# Stray screenshots dropped in the project root during preview
+/*.png
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Local preview server logs
+*.log
+
+# Note: public/ IS committed on purpose — it is the deployed static site,
+# regenerated from src/ + build.py via `python3 build.py`.
+
+# Claude Code local session settings
+.claude/

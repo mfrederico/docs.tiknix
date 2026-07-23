@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Growing Without Bloating the Core — Tiknix Docs</title>
+<meta name="description" content="Per-member feature flags with a privilege floor, and sidecar apps that live in their own repo but log in through yours.">
+<link rel="icon" href="/img/tiknix.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Figtree:ital,wght@0,300..900;1,300..900&family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,100..900,0..100&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/docs.css">
+<script src="/assets/docs.js"></script>
+</head>
+<body>
+<div class="shell">
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+<aside class="sidebar" id="sidebar">
+  <a class="sidebar-brand" href="/index.html">
+    <span class="brand-logo"></span>
+    <span class="brand-word">tiknix</span>
+    <span class="brand-sub">docs</span>
+  </a>
+  <nav class="nav">
+    <div class="nav-heading">Index</div>
+    <a class="nav-link" href="/index.html"><span class="nav-num">&#9737;</span>All articles</a>
+    <div class="nav-heading">Foundations</div>
+    <a class="nav-link" href="/build-on-primitives.html"><span class="nav-num">01</span>Start From Primitives, Not From Scratch</a>
+    <a class="nav-link" href="/php-sqlite-substrate.html"><span class="nav-num">02</span>Why PHP and SQLite Are a Serious Choice in 2026</a>
+    <a class="nav-link" href="/membership-and-settings.html"><span class="nav-num">03</span>The Members Table Is the Spine</a>
+    <a class="nav-link" href="/convention-routing.html"><span class="nav-num">04</span>Convention-Based Routing: A URL Is a Method Name</a>
+    <a class="nav-link" href="/data-without-migrations.html"><span class="nav-num">05</span>Modeling Data Without a Migration Backlog</a>
+    <a class="nav-link" href="/bootstrap-design-primitive.html"><span class="nav-num">06</span>Bootstrap as a Design Primitive</a>
+    <div class="nav-heading">Security &amp; Access</div>
+    <a class="nav-link" href="/authentication-included.html"><span class="nav-num">07</span>The Login You Don&#x27;t Have to Write</a>
+    <a class="nav-link" href="/two-factor-included.html"><span class="nav-num">08</span>Two-Factor Authentication as a Config Switch</a>
+    <a class="nav-link" href="/permissions-as-data.html"><span class="nav-num">09</span>Permissions as Data, Not If-Statements</a>
+    <a class="nav-link" href="/teams-and-ownership.html"><span class="nav-num">10</span>Teams, Ownership, and Sharing Work Safely</a>
+    <div class="nav-heading">Building with AI</div>
+    <a class="nav-link" href="/codebase-map-for-agents.html"><span class="nav-num">11</span>Give Your AI Assistant a Map, Not a Flashlight</a>
+    <a class="nav-link" href="/mcp-gateway.html"><span class="nav-num">12</span>MCP as a Primitive: One Endpoint for Every Agent</a>
+    <a class="nav-link" href="/agent-orchestration.html"><span class="nav-num">13</span>Plan With the Expensive Model, Execute With the Cheap One</a>
+    <a class="nav-link" href="/pipelines.html"><span class="nav-num">14</span>Pipelines: Automation That Ships With the App</a>
+    <a class="nav-link" href="/scaffolding-and-reuse.html"><span class="nav-num">15</span>Scaffolding Is a Reading Exercise</a>
+    <div class="nav-heading">Operations</div>
+    <a class="nav-link" href="/data-integration.html"><span class="nav-num">16</span>Five Ways Data Crosses the Boundary</a>
+    <a class="nav-link" href="/connections-and-broker-keys.html"><span class="nav-num">17</span>Third-Party Credentials Without Sprawl</a>
+    <a class="nav-link" href="/caching-by-default.html"><span class="nav-num">18</span>Caching You Don&#x27;t Have to Think About</a>
+    <a class="nav-link active" href="/feature-flags-and-sidecars.html"><span class="nav-num">19</span>Growing Without Bloating the Core</a>
+    <a class="nav-link" href="/production-checklist.html"><span class="nav-num">20</span>From Localhost to Production: The Honest Checklist</a>
+  </nav>
+  <div class="sidebar-foot">
+    Written against the Tiknix source. <a href="/index.html">All articles</a>
+  </div>
+</aside>
+<div class="main">
+  <header class="topbar">
+    <button class="btn-icon menu-toggle" id="menuToggle" type="button" aria-label="Open menu">&#9776;</button>
+    <div class="topbar-title">
+      <span class="eyebrow">Operations</span>
+      <strong>Growing Without Bloating the Core</strong>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-icon" id="themeToggle" type="button" aria-label="Toggle theme"><span id="themeIcon">&#9728;</span></button>
+    </div>
+  </header>
+  <main class="content">
+    <article class="narrow">
+      <header class="article-header">
+        <div class="meta">
+          <span class="chip chip-ops">Operations</span>
+          <span class="eyebrow">Article 19 of 20</span>
+          <span class="eyebrow">8 min read</span>
+        </div>
+        <h1>Growing Without Bloating the Core</h1>
+        <p class="lede">Per-member feature flags with a privilege floor, and sidecar apps that live in their own repo but log in through yours.</p>
+      </header>
+      <div class="article-body">
+<p>
+  Every successful application faces the same pressure: someone needs a capability that is genuinely
+  valuable and genuinely not core. A visual architecture explorer. A storefront. A pipeline editor.
+  Each is real work that some users need and most do not.
+</p>
+<p>
+  Put them all in core and you get a codebase where every deployment carries every feature, startup
+  loads code nobody uses, and the navigation menu becomes an inventory rather than a tool. Refuse
+  them all and you get a rigid framework people fork.
+</p>
+<p>Tiknix uses two mechanisms in combination: <strong>feature flags</strong> and <strong>sidecars</strong>.</p>
+
+<h2>Feature flags with a privilege floor</h2>
+<p>
+  <code>lib/Feature.php</code> is a per-member flag system with one design decision that makes it
+  more than a boolean store: <strong>every flag declares a minimum privilege level.</strong>
+</p>
+<pre><code>public const CATALOG = [
+    'explorer' => [
+        'label'     => 'Architecture Explorer',
+        'blurb'     => 'Visual data-model + call-graph explorer for your instances.',
+        'min_level' => 100,   // MEMBER and above
+    ],
+    'shop' => [
+        'label'     => 'Store',
+        'blurb'     => 'Per-instance storefront + admin, checkout via that instance\'s own Stripe.',
+        'min_level' => 100,
+    ],
+    'pipelines' => [
+        'label'     => 'Pipeline Editor',
+        'blurb'     => 'Build, edit, run and schedule deterministic pipelines in your instances.',
+        'min_level' => 100,
+    ],
+];</code></pre>
+<p>Flags are stored as <code>feature.&lt;key&gt;</code> rows in the existing member-scoped settings table — no new subsystem, no new table, no new admin screen concept. And the read path re-checks eligibility every time:</p>
+<blockquote>
+  <code>isEnabled()</code> re-checks eligibility on every read, so a demotion silently revokes the
+  flag without any cleanup pass.
+</blockquote>
+<p>
+  That is the property worth copying. In most flag systems, granting a capability writes a row, and
+  the row outlives the reason it was granted. Someone is demoted, and their flags quietly remain —
+  a privilege-escalation path assembled entirely out of correct-looking individual operations.
+</p>
+<p>
+  Here, eligibility is evaluated at read time from the member's <em>current</em> level. A demotion
+  revokes access immediately, everywhere, with no cleanup job to write, schedule, or forget. The
+  flag is a grant <em>plus</em> a live eligibility check, and both must hold.
+</p>
+
+<h2>Sidecars: separate apps, shared identity</h2>
+<p>
+  A sidecar is a full application in its own repository — the architecture explorer, the shop, the
+  pipeline editor — that a member reaches from your navigation and logs into with their existing
+  account.
+</p>
+<p>Registering one is configuration, not code:</p>
+<pre><code>[sidecar.explorer]
+url        = https://explorer.tiknix.com
+sso_secret = &lt;shared with the plugin's [sidecar] sso_secret&gt;
+feature    = explorer          ; the Feature flag gating who may launch it
+label      = Architecture Explorer
+icon       = bi-diagram-3</code></pre>
+<p>
+  Core reads these sections, shows a launch link to members whose feature flag is on, and mints a
+  signed handoff token. Adding a plugin is an <code>ini</code> section. Removing one is deleting the
+  section.
+</p>
+
+<h3>The SSO handoff, and why it is careful</h3>
+<p>
+  This is where a naive implementation gets dangerous, so it is worth reading what
+  <code>lib/Sidecar/Sso.php</code> actually does when a sidecar consumes a handoff token:
+</p>
+<ol>
+  <li><strong>Verify the signature</strong>, with an audience claim naming the specific plugin — a token for the shop cannot be replayed at the explorer.</li>
+  <li><strong>Burn the nonce, single-use.</strong> A replayed token is rejected outright.</li>
+  <li><strong>Re-check against core's database</strong> that the member is still active <em>and</em> still holds the feature grant — so a revoke on core propagates immediately rather than at token expiry.</li>
+  <li><strong>Regenerate the session id</strong> — standard session-fixation defense at a privilege transition.</li>
+  <li><strong>Store the minimum</strong>: just <code>{member_id, level, email}</code>, namespaced under the plugin name.</li>
+</ol>
+<p>
+  Step 3 is the one that separates this from an ordinary SSO handoff. Most token-based SSO trusts
+  the token's claims for its lifetime, which means revocation does not take effect until it expires.
+  Re-validating against core on consumption costs one query and closes that window.
+</p>
+
+<h2>What this architecture buys</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Property</th><th>Consequence</th></tr></thead>
+  <tbody>
+    <tr><td>Separate repository</td><td>Heavy features do not bloat core's clone, dependencies, or startup</td></tr>
+    <tr><td>Separate deploy</td><td>The explorer can ship on its own schedule; a bug there does not take down core</td></tr>
+    <tr><td>Shared identity</td><td>Users get one account and one login, not a second product to sign up for</td></tr>
+    <tr><td>Flag-gated</td><td>Only members who need it see it — the menu stays a tool, not an inventory</td></tr>
+    <tr><td>Config-registered</td><td>Adding or removing a plugin touches no code</td></tr>
+  </tbody>
+</table>
+</div>
+<p>
+  The comment in <code>Feature.php</code> records a real migration along these lines: an in-core
+  ecommerce flag was removed and the store became the <code>shop.tiknix</code> sidecar. Core got
+  smaller; the capability stayed available. That is the intended direction of travel — features
+  graduate <em>out</em> of core rather than accumulating in it.
+</p>
+
+<h2>When to reach for which</h2>
+<ul>
+  <li><strong>Feature flag alone</strong> — a capability that is small, lives in core, and only some members should see. A few files, one nav item.</li>
+  <li><strong>Sidecar plus flag</strong> — a capability with its own dependencies, its own release cadence, its own data model, or enough weight that core should not carry it.</li>
+</ul>
+<p>
+  The honest test is dependency weight and deploy independence. If it needs libraries core does not
+  and would slow every deploy, it is a sidecar.
+</p>
+
+<div class="callout callout-honest">
+  <span class="callout-title">Honest notes</span>
+  <ul>
+    <li><strong>Sidecars are separate operational responsibilities.</strong> Another deploy, another certificate, another log to watch, another thing that can be down while core is fine. Do not adopt one to avoid writing a controller.</li>
+    <li><strong>The SSO secret is shared state.</strong> Core and the plugin must hold the same secret. Rotating it requires coordinating both sides, and getting it wrong logs everybody out of the sidecar.</li>
+    <li><strong>The flag catalog is a constant.</strong> Flags live in a class constant, so adding one is a code change and a deploy — not a runtime toggle. That is a reasonable trade for auditability, but it is not a feature-management platform with percentage rollouts.</li>
+    <li><strong>Flags are per-member, not per-cohort.</strong> There is no "10% of users" targeting. Granting to fifty people is fifty grants.</li>
+    <li><strong>Cross-app debugging is harder.</strong> When something breaks at the handoff, you are reading two applications' logs and correlating by hand.</li>
+    <li><strong>A launch link is not authorization.</strong> The sidecar re-checks the grant on consumption, which is what makes hiding the nav item a UI nicety rather than the security boundary. Any sidecar you write must keep that check — inherit <code>Sso</code> rather than reimplementing it.</li>
+  </ul>
+</div>
+      </div>
+      <nav class="article-nav">
+        <a class="prev" href="/caching-by-default.html"><span class="dir">&#8592; Previous</span><span class="ttl">Caching You Don&#x27;t Have to Think About</span></a><a class="next" href="/production-checklist.html"><span class="dir">Next &#8594;</span><span class="ttl">From Localhost to Production: The Honest Checklist</span></a>
+      </nav>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="brand-logo footer-logo"></span>
+        <div>
+          <div class="footer-word">tiknix</div>
+          <div class="footer-tag">Build on primitives that already work</div>
+        </div>
+      </div>
+      <nav class="footer-links">
+        <a href="https://tiknix.com">Homepage</a>
+        <a href="https://github.com/mfrederico/tiknix">GitHub</a>
+        <a href="https://github.com/mfrederico/tiknix-tutorials">Tutorials</a>
+        <a href="/index.html">All articles</a>
+      </nav>
+    </div>
+    <div class="footer-fine">
+      Documentation written against the Tiknix source. Tiknix is released under the MIT License.
+    </div>
+  </footer>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<p>
+  The moment your application talks to somebody else's — Stripe, Shopify, GitHub, an email
+  provider — you have acquired a credential problem. Someone's token now lives in your system. It
+  has to be stored, scoped to the right customer, used from the right place, and revoked when
+  things go wrong.
+</p>
+<p>
+  The path of least resistance is an environment variable and a comment saying "TODO: encrypt
+  this." Tiknix takes a more structured route, and the structure is worth understanding even if you
+  never use its connectors, because the shape generalizes to any integration you build.
+</p>
+
+<h2>Encrypted at rest, with a real cipher</h2>
+<p>
+  <code>lib/EncryptionService.php</code> uses libsodium's authenticated symmetric encryption:
+</p>
+<pre><code>$nonce      = random_bytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);  // 24 bytes, per value
+$ciphertext = sodium_crypto_secretbox($plaintext, $nonce, $key);
+$encrypted  = base64_encode($nonce . $ciphertext);
+
+sodium_memzero($key);   // wipe the key from memory when done</code></pre>
+<p>Three details separate this from the usual improvised version:</p>
+<ul>
+  <li><strong>Authenticated encryption.</strong> <code>secretbox</code> is XSalsa20-Poly1305 — tampering with the ciphertext causes decryption to fail rather than silently produce garbage.</li>
+  <li><strong>A fresh random nonce per value</strong>, prepended to the ciphertext. Nonce reuse is the classic way to destroy a stream cipher's security, and this design makes it structurally impossible.</li>
+  <li><strong><code>sodium_memzero()</code> after use.</strong> The key does not linger in process memory waiting to appear in a core dump.</li>
+</ul>
+<p>
+  The key comes from <code>conf/config.ini</code> <code>[security] app_key</code> — which means
+  that file is a secret. Not "should probably be private." A secret. Out of version control,
+  restricted permissions, backed up somewhere you can actually find it, because losing it means
+  every stored token becomes unrecoverable noise.
+</p>
+
+<h2>Connectors behind one interface</h2>
+<p>
+  <code>services/connectors/</code> holds a registry of connector classes — Stripe, Shopify,
+  Instagram at present — behind <code>ConnectorInterface</code> and
+  <code>AbstractConnector</code>. Adding a provider means adding a class, not editing the OAuth
+  flow.
+</p>
+<p>The generic OAuth path is one sequence for every registry-driven connector:</p>
+<pre><code>GET  /connections/connect/&lt;type&gt;?id=&lt;instance&gt;&amp;env=prod
+       -> signed state (OAuthStateService) -> provider consent screen
+GET  /connections/callback/&lt;type&gt;
+       -> connector->exchangeCode() -> encrypted row in `connections`</code></pre>
+<p>
+  The signed state parameter is the CSRF defense for OAuth — an unsigned state is how you get
+  tricked into attaching an attacker's account to a victim's session. It is handled once, centrally,
+  for every connector, which is precisely the kind of detail that gets skipped when each
+  integration rolls its own flow.
+</p>
+<p>
+  GitHub keeps a separate path (personal access token, then publish-to-branch-and-open-a-PR)
+  because its use case is genuinely different. The codebase says so in a comment rather than
+  pretending the abstraction is cleaner than it is.
+</p>
+
+<h2>Scoping: member, instance, environment</h2>
+<p>
+  A connection is bound to a <strong>member</strong>, an <strong>instance</strong>, and an
+  <strong>environment</strong> (dev / staging / prod). All three matter:
+</p>
+<ul>
+  <li><strong>Member</strong> — a connection is only ever readable or usable by the member who owns the instance it belongs to. Ownership is checked, not assumed.</li>
+  <li><strong>Instance</strong> — one customer's Shopify token cannot be reached from another customer's app.</li>
+  <li><strong>Environment</strong> — your staging deployment does not hold live payment credentials, which removes an entire class of expensive accident.</li>
+</ul>
+
+<h2>The broker key: a capability, not a secret</h2>
+<p>
+  This is the most interesting piece of the design. Tokens are held <strong>only on the control
+  plane</strong>. A running instance never gets the Stripe key. Instead it gets a
+  <em>broker key</em>, and calls the MCP gateway, which makes the upstream call on its behalf.
+</p>
+<p>The properties are worth listing precisely — the code's own docblock does:</p>
+<blockquote>
+  The broker key is a revocable, hash-stored capability that lets a builder instance call the MCP
+  gateway to reach ITS OWN connected stores. It decrypts nothing, is scoped to a single instance,
+  and is killed by one flag flip. The raw key is shown exactly once (at mint); only its sha-256
+  hash lives in the DB.
+</blockquote>
+<p>And then the sentence that shows the threat model was actually thought through:</p>
+<blockquote>
+  This is a capability, NOT a secret worth custody — losing it exposes, at worst, rate-limited,
+  audited API use of that one instance's stores until it is revoked.
+</blockquote>
+<p>
+  Compare the two blast radiuses. Leak a Stripe secret key: an attacker has your Stripe account,
+  they can move money, and rotation is a scramble. Leak a broker key: an attacker can make
+  rate-limited, audited calls scoped to one instance's connected stores, until someone flips a flag.
+</p>
+<p>
+  <strong>The design goal is not preventing every leak — it is making leaks survivable.</strong>
+  That is the more mature security posture, and it shows up in the storage decision too: only the
+  SHA-256 hash is persisted, so a database compromise does not yield working keys.
+</p>
+
+<h2>The pattern, extracted</h2>
+<p>Even if you never touch Tiknix's connectors, this shape is reusable:</p>
+<ol>
+  <li><strong>Encrypt credentials at rest</strong> with an authenticated cipher and a per-value nonce.</li>
+  <li><strong>Hold them in one place</strong> — a control plane — rather than distributing them to every process that needs the capability.</li>
+  <li><strong>Hand out scoped, revocable capabilities</strong> instead of the credentials themselves.</li>
+  <li><strong>Store capability hashes, not capabilities.</strong></li>
+  <li><strong>Show a raw secret exactly once</strong>, at creation.</li>
+  <li><strong>Make revocation a single, fast operation</strong> — because it will be done in a hurry, at a bad time.</li>
+  <li><strong>Scope by owner, tenant, and environment</strong>, and enforce all three on every access.</li>
+</ol>
+
+<div class="callout callout-honest">
+  <span class="callout-title">Honest notes</span>
+  <ul>
+    <li><strong><code>app_key</code> is a single point of failure.</strong> Lose it and every stored connection is unrecoverable; leak it plus a database dump and every token is exposed. It deserves the same handling as a production database password — and a documented rotation plan, which is more work than it sounds because rotation means re-encrypting every stored value.</li>
+    <li><strong>The connector registry is small.</strong> Stripe, Shopify, Instagram, plus the bespoke GitHub path. Real, and not a marketplace. Adding a provider is a class you write.</li>
+    <li><strong>The broker adds a hop.</strong> Every brokered call goes through the gateway — more latency, and a component whose availability now matters. The security win is worth it; the operational cost is real and should be monitored.</li>
+    <li><strong>The connections hub is admin-scoped.</strong> Connecting a store is an administrative action in the current design, not a self-service member flow.</li>
+    <li><strong>Encryption at rest is not encryption in use.</strong> A decrypted token exists in process memory while a request runs. That is unavoidable; it is worth knowing rather than assuming otherwise.</li>
+    <li><strong>Audit logs only help if someone reads them.</strong> "Rate-limited and audited" is a strong mitigation on paper and inert in practice unless something alerts on anomalies.</li>
+  </ul>
+</div>

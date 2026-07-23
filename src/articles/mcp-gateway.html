@@ -1,0 +1,177 @@
+<p>
+  An AI agent is only as useful as the things it can reach. Left to the default arrangement, every
+  agent on every developer machine gets its own configuration file listing its own set of MCP
+  servers, each with its own credentials pasted in. Nobody knows who can call what. Nobody can
+  revoke anything centrally. Nobody can answer "which tools did that agent actually invoke last
+  Tuesday?"
+</p>
+<p>
+  Tiknix treats MCP the same way it treats authentication or permissions: as a primitive the
+  application owns. There is one endpoint — <code>POST /mcp/message</code> — and it is a gateway.
+</p>
+
+<h2>The shape</h2>
+<pre><code>Claude Code (single config) ──▶ Tiknix Gateway ──▶ Backend MCP Servers
+                                   │
+                                   ├── Built-in Tiknix tools
+                                   ├── Shopify MCP
+                                   ├── GitHub MCP
+                                   └── Custom MCP servers</code></pre>
+<p>An agent configures one endpoint and one API key. Behind it, the gateway:</p>
+<ul>
+  <li>aggregates tools from every backend the caller is allowed to reach,</li>
+  <li>routes each call to the right backend,</li>
+  <li>authenticates and authorizes per key,</li>
+  <li>and logs every call.</li>
+</ul>
+<p>
+  The value is the same as any gateway: <strong>one place where policy lives.</strong> Adding a
+  backend does not touch a single developer's machine. Revoking a key kills access to everything
+  behind it, immediately, from an admin screen.
+</p>
+
+<h2>Namespacing, so tools cannot collide</h2>
+<p>Every tool is exposed as <code>server:tool</code>:</p>
+<pre><code>tiknix:reuse_digest
+shopify:get_products
+github:list_repos</code></pre>
+<p>
+  Two backends can both offer <code>search</code> and nothing breaks. More importantly, the tool
+  name an agent sees carries its provenance — reading a call log, you know where each call went
+  without cross-referencing anything.
+</p>
+
+<h2>Two layers of authentication, and why the first one looks alarming</h2>
+<p>
+  This is the part that makes people nervous on first read, so the codebase documents it at length
+  in the controller header. The route permission is:
+</p>
+<pre><code>mcp::message  = 101   (PUBLIC)
+mcp::registry = 101   (PUBLIC)</code></pre>
+<p>
+  Public. On the MCP endpoint. That looks like a serious mistake, and it is not — it is a
+  deliberate two-layer design:
+</p>
+<ul>
+  <li>
+    <strong>Layer 1 (route)</strong> makes the endpoint <em>reachable</em>. It has to be: an MCP
+    client must connect before it can authenticate, and the standard MCP flow is connect → list
+    tools → authenticate → call tools.
+  </li>
+  <li>
+    <strong>Layer 2 (controller)</strong> does the real work. <code>initialize</code>,
+    <code>tools/list</code>, and <code>ping</code> are public — they are discovery, which is
+    documentation, not execution. <code>tools/call</code> requires a valid API key.
+  </li>
+</ul>
+<p>The project's own standards put the test bluntly:</p>
+<blockquote>
+  <strong>DON'T PANIC if you see:</strong> <code>mcp::message</code> at level 101, or
+  <code>tools/list</code> returning data without auth. This is correct.<br>
+  <strong>DO PANIC if you see:</strong> <code>tools/call</code> working without an API key. That is
+  a bug.
+</blockquote>
+<p>
+  That is a good pattern for any security decision that looks wrong at a glance: write down what is
+  intentional, what would constitute a real breach, and where the boundary sits. Otherwise a
+  well-meaning reviewer "fixes" it in six months and breaks discovery for every client — or worse,
+  assumes the whole thing is fine because it looked deliberate.
+</p>
+<p>
+  It also carries an explicit maintenance rule: new methods added to the public list require review.
+  The list of things reachable without a key is small, enumerated, and guarded.
+</p>
+
+<h2>API keys are scoped capabilities</h2>
+<p>The <code>apikey</code> table is where per-agent policy lives:</p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Column</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>member_id</code></td><td>Who owns this key — every call has an accountable human</td></tr>
+    <tr><td><code>allowed_servers</code></td><td>Which backends this key may reach</td></tr>
+    <tr><td><code>scopes</code></td><td>What it may do</td></tr>
+    <tr><td><code>expires_at</code></td><td>Time-bounded access</td></tr>
+    <tr><td><code>is_active</code></td><td>One-flag revocation</td></tr>
+    <tr><td><code>token_hash</code>, <code>key_class</code></td><td>Hash-stored keys; broker keys as a distinct class</td></tr>
+    <tr><td><code>last_used_at</code>, <code>last_used_ip</code>, <code>usage_count</code></td><td>Is this key still in use, and from where?</td></tr>
+  </tbody>
+</table>
+</div>
+<p>
+  Members manage their own keys at <code>/apikeys</code>. The important properties are ordinary
+  credential hygiene applied to agents: keys belong to a person, reach only what they are permitted
+  to reach, expire, and die on one flag flip.
+</p>
+<p>
+  <code>last_used_at</code> deserves a mention. The hardest part of credential management is not
+  issuing keys — it is knowing which of the forty existing keys are still needed. A last-used
+  timestamp turns that from an archaeology project into a query.
+</p>
+
+<h2>Everything is logged, at two levels of detail</h2>
+<p>
+  <code>mcpusage</code> records the analytics view: key, member, server, tool, response status,
+  duration, IP, timestamp. <code>mcplog</code> records the forensic view: method, arguments, request
+  body, response body, success flag, HTTP code, duration, error, user agent.
+</p>
+<p>
+  This matters more for agents than for humans. When a person clicks a button, intent is obvious.
+  When an agent makes forty tool calls in ten seconds, "what did it actually do, in what order, with
+  what arguments?" is the only way to reconstruct a bad outcome. Without a log at that granularity
+  you are guessing.
+</p>
+<p>The split is sensible: the analytics table stays queryable and cheap; the verbose table carries the payloads.</p>
+
+<h2>The same gateway serves the broker</h2>
+<p>
+  The MCP gateway is also how a provisioned instance reaches its own connected stores. The instance
+  holds a broker key — a revocable, hash-stored capability scoped to one instance — and calls the
+  gateway. The gateway holds the actual Stripe or Shopify credentials and makes the upstream call.
+</p>
+<p>
+  So the same endpoint that gives an agent its tools also enforces the credential boundary described
+  in <a href="/connections-and-broker-keys.html">Third-Party Credentials Without Sprawl</a>. One
+  chokepoint, one auth model, one audit trail — for agent tool use <em>and</em> for third-party API
+  access.
+</p>
+
+<h2>Built-in tools</h2>
+<p>
+  Tiknix's own MCP server exposes the codebase introspection tools (<code>reuse_digest</code>,
+  <code>codebase_map</code>, <code>whatprovides</code>, <code>describe</code>), the validators
+  (<code>validate_php</code>, <code>check_redbean</code>, <code>check_flightphp</code>), and the
+  full pipeline surface (<code>pipeline_list</code>, <code>pipeline_set</code>,
+  <code>pipeline_run</code>, <code>pipeline_components</code>, and the rest).
+</p>
+<p>
+  Adding a tool is dropping a class in <code>mcptools/</code> that extends <code>BaseTool</code> and
+  declares a name, a description, and an input schema — the same auto-discovery approach as pipeline
+  steps. The description field is the actual interface: it is what an agent reads to decide whether
+  to call the tool, so it deserves as much care as a function signature.
+</p>
+
+<h2>Why "MCP as a primitive" is the right framing</h2>
+<p>
+  The alternative — every agent configured individually against every service — has the same shape
+  as every credential problem that predates it. It works at one developer and falls apart at five:
+  no inventory, no revocation, no audit, no consistency, and secrets on laptops.
+</p>
+<p>
+  Making the gateway part of the application means agent access gets the same treatment as user
+  access. Identity (which key), authorization (which backends, which scopes), audit (both log
+  tables), and revocation (one flag) are the same four questions you already answer for humans —
+  answered in the same system, by the same admin, with the same tools.
+</p>
+
+<div class="callout callout-honest">
+  <span class="callout-title">Honest notes</span>
+  <ul>
+    <li><strong>The gateway is a single point of failure.</strong> Everything routes through it. When it is down, every agent loses every tool. That is the cost of centralization, and it means the gateway needs the monitoring you would give a login service.</li>
+    <li><strong>Public discovery is a real, if small, disclosure.</strong> <code>tools/list</code> without a key tells an unauthenticated caller what tools exist and what they take. That is intentional and standard for MCP — but do not put sensitive detail in tool names or descriptions.</li>
+    <li><strong>Verbose logs contain whatever agents send.</strong> <code>mcplog</code> stores request and response bodies. Those can include customer data, tokens in arguments, and anything else that passed through. Set a retention policy and treat that table as sensitive.</li>
+    <li><strong>Scope checks are best-effort.</strong> As documented in <code>ApiAuthService</code>, an empty or absent scope list allows everything. Keys without explicit scopes are broader than they look — set them deliberately.</li>
+    <li><strong>Namespacing prevents collisions, not confusion.</strong> An agent facing sixty tools across six backends chooses worse than one facing eight. Curate what a key can see; more reach is not more capability.</li>
+    <li><strong>A gateway does not make tool calls safe.</strong> It authenticates, authorizes, and records. Whether a given tool should be callable by a given agent at all is still a judgment you have to make.</li>
+  </ul>
+</div>

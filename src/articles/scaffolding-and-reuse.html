@@ -1,0 +1,129 @@
+<p>
+  Code generation has an image problem, and it earned it. The classic scaffolder produces a wall of
+  code you did not write, do not understand, and cannot safely modify — so you either keep it
+  untouched and route around it, or you rewrite it and wonder why you generated it at all.
+</p>
+<p>
+  The failure is not generation. It is that the generated code <em>doesn't look like the rest of
+  the codebase</em>. Tiknix's scaffold system is built on the opposite premise: the output's job is
+  to be indistinguishable from something a careful developer on the project would have written.
+</p>
+
+<h2>What it generates</h2>
+<pre><code>php cli/scaffold.php invoice model controller views</code></pre>
+<p>From a bean name, it produces:</p>
+<ul>
+  <li>a FUSE model in <code>models/</code></li>
+  <li>a CRUD controller, or an API controller, in <code>controls/</code></li>
+  <li>index and edit views in <code>views/</code></li>
+</ul>
+<p>
+  The interesting part is where it gets the field list. It <strong>introspects the existing
+  table</strong>. Because RedBeanPHP creates columns as you store beans, the normal flow is: write
+  a few lines that store the object you have in mind, let the schema materialize, then scaffold the
+  admin UI from the schema that actually exists.
+</p>
+<p>
+  That inverts the usual order in a useful way. You do not describe your data twice — once to a
+  generator and once to the database. The database is the description.
+</p>
+
+<h2>Types map to widgets, and the map is a file</h2>
+<pre><code>// lib/Scaffold/FieldRegistry.php
+private array $typeWidgetMap = [
+    'string'   => 'text',      'text'  => 'textarea',
+    'int'      => 'number',    'float' => 'number',
+    'bool'     => 'checkbox',  'date'  => 'date',
+    'datetime' => 'datetime',  'json'  => 'json',
+    'email'    => 'email',     'password' => 'password',
+    'url'      => 'url',       'select'   => 'select',
+    'enum'     => 'enum',
+];</code></pre>
+<p>
+  Each widget is its own template in <code>Templates/fields/</code> — thirteen of them, including a
+  <code>fancyDateSelector</code> that someone clearly added because the plain date input was not
+  good enough for a real screen.
+</p>
+<p>
+  That detail is the tell that this is a working tool rather than a demo. Generators that stay
+  useful are the ones where "this widget is wrong for my case" has an answer that is a file rather
+  than a fork.
+</p>
+
+<h2>The real product is the convention</h2>
+<p>
+  Here is the part that matters more than the generator: <strong>generated code and hand-written
+  code look the same, so reading one teaches you the other.</strong>
+</p>
+<p>
+  A scaffolded controller extends <code>BaseControls\Control</code>, uses <code>$this->render()</code>,
+  reads input through the request API, calls <code>Bean::</code> for persistence, and relies on the
+  routing convention rather than registering routes. That is not because the generator is
+  opinionated — it is because <em>every</em> controller in the project does those things.
+</p>
+<p>The consequences compound:</p>
+<ul>
+  <li>You can edit generated code without a style shift, because it is already in the house style.</li>
+  <li>You can read a scaffolded controller to learn how to write one by hand.</li>
+  <li>An AI assistant reading your codebase sees one consistent pattern, not two dialects.</li>
+</ul>
+<p>
+  That last point deserves emphasis. Models are pattern-matchers. In a codebase with one clear
+  convention, an agent's next file lands in the convention almost automatically. In a codebase with
+  three eras of style, it produces a fourth. <strong>Consistency is not aesthetics — it is the
+  input quality of every future generation.</strong>
+</p>
+
+<h2>Scaffold, then edit — and mean it</h2>
+<p>The workflow this system is designed for:</p>
+<ol>
+  <li>Store a couple of beans so the table exists with the shape you want.</li>
+  <li>Scaffold the model, controller, and views.</li>
+  <li><strong>Read the output.</strong> All of it. It is short.</li>
+  <li>Edit it like your own code, because from this point it is.</li>
+</ol>
+<p>
+  There is no regeneration step, and that is deliberate. Generators that own their output forever —
+  "don't edit below this line" — force you into their model of the world permanently. A generator
+  that hands you a file and lets go gives you a fast start with no long-term constraint. The
+  trade-off is real: you cannot re-run it to pick up an improved template. That is the correct
+  trade for application code.
+</p>
+
+<h2>Where this fits with AI assistance</h2>
+<p>
+  Scaffolding and an AI assistant are not competitors; they operate at different points on the
+  determinism curve.
+</p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Use the scaffolder for</th><th>Use an assistant for</th></tr></thead>
+  <tbody>
+    <tr><td>The eleventh CRUD screen</td><td>Anything with domain logic</td></tr>
+    <tr><td>Output that must be byte-consistent with the last ten</td><td>Work that requires judgment</td></tr>
+    <tr><td>Structure you already know exactly</td><td>Structure you are still working out</td></tr>
+    <tr><td>Zero-review-needed boilerplate</td><td>Code you intend to review closely anyway</td></tr>
+  </tbody>
+</table>
+</div>
+<p>
+  A deterministic generator is strictly better than a model for work whose answer is already
+  known — it is faster, free, and identical every time. Spending model tokens on the eleventh CRUD
+  screen is spending judgment where no judgment is required.
+</p>
+<p>
+  And when the assistant does write a controller, the scaffolded ones around it are the examples it
+  matches. The generator's real output is not files; it is a codebase where the pattern is
+  unmistakable.
+</p>
+
+<div class="callout callout-honest">
+  <span class="callout-title">Honest notes</span>
+  <ul>
+    <li><strong>Generated CRUD is a starting point, not a product.</strong> It gives you working list and edit screens. It does not give you the workflow, validation, or domain rules that make the feature worth using.</li>
+    <li><strong>Introspection reflects reality, including bad reality.</strong> Scaffold from a table with sloppy inferred types and you get a UI with sloppy inputs. Fix the schema first.</li>
+    <li><strong>No regeneration.</strong> Once you edit, you own it. Template improvements do not flow back into files you already generated.</li>
+    <li><strong>Permissions still need attention.</strong> A generated controller creates routes; those routes need <code>authcontrol</code> rows. Build mode will create them permissively — review the levels before you ship.</li>
+    <li><strong>Read what you generate.</strong> Same rule as inheriting a framework primitive: unreviewed code is unreviewed code regardless of who or what typed it.</li>
+  </ul>
+</div>

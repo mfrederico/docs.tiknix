@@ -1,0 +1,66 @@
+      <section class="hero">
+        <span class="eyebrow">Tiknix</span>
+        <h1>Build on primitives that already work</h1>
+        <p>
+          Tiknix is a PHP application framework where membership, authentication, two-factor auth,
+          role-based permissions, an ORM, a Bootstrap design layer, data integrations, an MCP
+          gateway, and an AI build pipeline are already wired together. These articles explain what
+          each piece does, why it was built the way it was, and what you still own once you adopt it.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="/build-on-primitives.html">Start with the argument &#8594;</a>
+          <a class="btn btn-ghost" href="/authentication-included.html">Jump to authentication</a>
+        </div>
+      </section>
+
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-label">Substrate</span>
+          <div class="stat-value">PHP 8.5</div>
+          <div class="stat-note">FlightPHP routing, RedBeanPHP ORM, Composer</div>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Default storage</span>
+          <div class="stat-value">SQLite</div>
+          <div class="stat-note">MySQL, MariaDB, and PostgreSQL also supported</div>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Identity</span>
+          <div class="stat-value">Included</div>
+          <div class="stat-note">Sessions, OAuth, TOTP 2FA, recovery codes</div>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Authorization</span>
+          <div class="stat-value">4 levels</div>
+          <div class="stat-note">Route permissions stored as rows, not code</div>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Interface</span>
+          <div class="stat-value">Bootstrap</div>
+          <div class="stat-note">5.3 components, palette and type set by CSS variables</div>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Agent access</span>
+          <div class="stat-value">MCP</div>
+          <div class="stat-note">One gateway endpoint, scoped keys, every call logged</div>
+        </div>
+      </div>
+
+      <section class="panel" style="margin-bottom:1rem">
+        <div class="panel-header"><h3>How to read this series</h3></div>
+        <div class="panel-body">
+          <p style="margin-bottom:.8rem">
+            Each article stands on its own, but they are ordered so that the earlier ones set up
+            vocabulary the later ones use. If you are evaluating Tiknix, read
+            <a href="/build-on-primitives.html">Start From Primitives</a> and
+            <a href="/php-sqlite-substrate.html">Why PHP and SQLite</a> first. If you have already
+            installed it and want to ship something, start at
+            <a href="/convention-routing.html">Convention-Based Routing</a>.
+          </p>
+          <p style="margin-bottom:0">
+            Every article ends with an <strong>honest notes</strong> section: the trade-offs, the
+            sharp edges, and the work the framework does <em>not</em> do for you. A tool you can
+            only describe in superlatives is a tool you do not understand yet.
+          </p>
+        </div>
+      </section>

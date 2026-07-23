@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Why PHP and SQLite Are a Serious Choice in 2026 — Tiknix Docs</title>
+<meta name="description" content="Two of the most-deployed pieces of software on earth, chosen on merit: boring operations, a copy-the-file backup story, and an ecosystem now moving toward Turso and in-database vector search.">
+<link rel="icon" href="/img/tiknix.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Figtree:ital,wght@0,300..900;1,300..900&family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,100..900,0..100&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/docs.css">
+<script src="/assets/docs.js"></script>
+</head>
+<body>
+<div class="shell">
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+<aside class="sidebar" id="sidebar">
+  <a class="sidebar-brand" href="/index.html">
+    <span class="brand-logo"></span>
+    <span class="brand-word">tiknix</span>
+    <span class="brand-sub">docs</span>
+  </a>
+  <nav class="nav">
+    <div class="nav-heading">Index</div>
+    <a class="nav-link" href="/index.html"><span class="nav-num">&#9737;</span>All articles</a>
+    <div class="nav-heading">Foundations</div>
+    <a class="nav-link" href="/build-on-primitives.html"><span class="nav-num">01</span>Start From Primitives, Not From Scratch</a>
+    <a class="nav-link active" href="/php-sqlite-substrate.html"><span class="nav-num">02</span>Why PHP and SQLite Are a Serious Choice in 2026</a>
+    <a class="nav-link" href="/membership-and-settings.html"><span class="nav-num">03</span>The Members Table Is the Spine</a>
+    <a class="nav-link" href="/convention-routing.html"><span class="nav-num">04</span>Convention-Based Routing: A URL Is a Method Name</a>
+    <a class="nav-link" href="/data-without-migrations.html"><span class="nav-num">05</span>Modeling Data Without a Migration Backlog</a>
+    <a class="nav-link" href="/bootstrap-design-primitive.html"><span class="nav-num">06</span>Bootstrap as a Design Primitive</a>
+    <div class="nav-heading">Security &amp; Access</div>
+    <a class="nav-link" href="/authentication-included.html"><span class="nav-num">07</span>The Login You Don&#x27;t Have to Write</a>
+    <a class="nav-link" href="/two-factor-included.html"><span class="nav-num">08</span>Two-Factor Authentication as a Config Switch</a>
+    <a class="nav-link" href="/permissions-as-data.html"><span class="nav-num">09</span>Permissions as Data, Not If-Statements</a>
+    <a class="nav-link" href="/teams-and-ownership.html"><span class="nav-num">10</span>Teams, Ownership, and Sharing Work Safely</a>
+    <div class="nav-heading">Building with AI</div>
+    <a class="nav-link" href="/codebase-map-for-agents.html"><span class="nav-num">11</span>Give Your AI Assistant a Map, Not a Flashlight</a>
+    <a class="nav-link" href="/mcp-gateway.html"><span class="nav-num">12</span>MCP as a Primitive: One Endpoint for Every Agent</a>
+    <a class="nav-link" href="/agent-orchestration.html"><span class="nav-num">13</span>Plan With the Expensive Model, Execute With the Cheap One</a>
+    <a class="nav-link" href="/pipelines.html"><span class="nav-num">14</span>Pipelines: Automation That Ships With the App</a>
+    <a class="nav-link" href="/scaffolding-and-reuse.html"><span class="nav-num">15</span>Scaffolding Is a Reading Exercise</a>
+    <div class="nav-heading">Operations</div>
+    <a class="nav-link" href="/data-integration.html"><span class="nav-num">16</span>Five Ways Data Crosses the Boundary</a>
+    <a class="nav-link" href="/connections-and-broker-keys.html"><span class="nav-num">17</span>Third-Party Credentials Without Sprawl</a>
+    <a class="nav-link" href="/caching-by-default.html"><span class="nav-num">18</span>Caching You Don&#x27;t Have to Think About</a>
+    <a class="nav-link" href="/feature-flags-and-sidecars.html"><span class="nav-num">19</span>Growing Without Bloating the Core</a>
+    <a class="nav-link" href="/production-checklist.html"><span class="nav-num">20</span>From Localhost to Production: The Honest Checklist</a>
+  </nav>
+  <div class="sidebar-foot">
+    Written against the Tiknix source. <a href="/index.html">All articles</a>
+  </div>
+</aside>
+<div class="main">
+  <header class="topbar">
+    <button class="btn-icon menu-toggle" id="menuToggle" type="button" aria-label="Open menu">&#9776;</button>
+    <div class="topbar-title">
+      <span class="eyebrow">Foundations</span>
+      <strong>Why PHP and SQLite Are a Serious Choice in 2026</strong>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-icon" id="themeToggle" type="button" aria-label="Toggle theme"><span id="themeIcon">&#9728;</span></button>
+    </div>
+  </header>
+  <main class="content">
+    <article class="narrow">
+      <header class="article-header">
+        <div class="meta">
+          <span class="chip chip-foundations">Foundations</span>
+          <span class="eyebrow">Article 02 of 20</span>
+          <span class="eyebrow">11 min read</span>
+        </div>
+        <h1>Why PHP and SQLite Are a Serious Choice in 2026</h1>
+        <p class="lede">Two of the most-deployed pieces of software on earth, chosen on merit: boring operations, a copy-the-file backup story, and an ecosystem now moving toward Turso and in-database vector search.</p>
+      </header>
+      <div class="article-body">
+<p>
+  Tiknix runs on PHP and defaults to SQLite. Both choices attract eye-rolls from people who
+  haven't looked at either in a decade. Both are, on the merits, extremely good calls for the
+  kind of software most people are actually building.
+</p>
+
+<h2>The case for PHP, made in 2026</h2>
+<p>
+  PHP's defining property is that <strong>the deployment story is already solved everywhere</strong>.
+  A PHP application is a directory of files behind a web server. There is no build step, no
+  process supervisor, no container orchestration, no long-lived runtime that leaks memory across
+  requests. You copy the files up; the next request runs the new code.
+</p>
+<p>
+  That model has a second, underrated property: <strong>request isolation by default</strong>.
+  Each HTTP request gets a fresh interpreter state and tears it down when it finishes. A memory
+  leak in one request cannot degrade the next one. A crash affects one user. Whole classes of
+  bugs that long-running application servers spend real engineering effort on — connection pool
+  exhaustion, stale globals, event-loop starvation — simply do not have anywhere to live.
+</p>
+<p>
+  Modern PHP is also not the language of its reputation. Tiknix runs on <strong>PHP 8.5</strong>
+  — the composer floor is <code>>=8.1</code>, but the deployed runtime is current, and staying
+  current is the point. That means typed properties, enums, readonly properties, first-class
+  callables, constructor promotion, match expressions, and named arguments. The code in
+  <code>lib/</code> reads like any other typed, modern server language:
+</p>
+<pre><code>public static function check(
+    string $action,
+    int $maxAttempts = 5,
+    int $windowSeconds = 300,
+    ?string $identifier = null
+): bool {
+    // lib/RateLimiter.php
+}</code></pre>
+<p>
+  And the ecosystem behind it is mature in the boring way that matters: Composer for dependencies,
+  PSR standards for interoperability, Monolog for logging, PHPUnit for tests. Tiknix uses all of
+  them rather than inventing house equivalents.
+</p>
+
+<h3>Where PHP genuinely costs you</h3>
+<p>
+  Long-lived connections and background work are the honest weak spots. WebSockets, streaming, and
+  persistent worker processes want a different runtime shape. Tiknix does not pretend otherwise —
+  the AI Builder's terminal and chat channels run through separate Node and PHP bridge processes on
+  local ports, and the web tier proxies to them. That is the right answer, and it's worth knowing
+  up front that "everything is a request" has a boundary.
+</p>
+
+<h2>The case for SQLite</h2>
+<p>
+  SQLite is the most widely deployed database engine in existence — it is in every phone, every
+  browser, most desktop applications, and a great deal of embedded hardware. Its test suite is
+  famously exhaustive. Its file format is a documented, forward-compatible standard that the
+  authors have committed to supporting into the 2050s. It is, by any reasonable measure, some of
+  the most thoroughly validated software you will ever depend on.
+</p>
+<p>What that means practically, on a Tiknix install:</p>
+<ul>
+  <li><strong>No database server.</strong> No port, no daemon, no credentials, no separate host to secure or patch. One less service that can be down.</li>
+  <li><strong>Backups are <code>cp</code>.</strong> Your entire application state is one file at <code>database/tiknix.db</code>. Copying it is a backup. Copying it back is a restore. (Use <code>sqlite3 .backup</code> or the backup API for a consistent copy while writes are in flight.)</li>
+  <li><strong>Environments are trivially reproducible.</strong> A workspace clone is a file copy. This is exactly how <code>lib/WorkspaceManager.php</code> provisions isolated instances for AI Builder tasks: fresh SQLite database, fresh config, fully independent.</li>
+  <li><strong>Reads are extremely fast.</strong> No network hop, no serialization across a socket. An in-process query against a warm page cache is measured in microseconds.</li>
+</ul>
+
+<h3>The write-concurrency question, answered directly</h3>
+<p>
+  The standard objection is write concurrency, and it is a real constraint: SQLite serializes
+  writers. One write transaction proceeds at a time; others wait. In WAL mode, readers do not
+  block writers and writers do not block readers, which removes most of the practical pain — but
+  the single-writer rule stands.
+</p>
+<p>
+  The useful question is not "is that a limitation" (it is) but "does it bind on your workload."
+  For an internal tool, a team dashboard, a customer portal, a booking system, a CRM, or a SaaS
+  in its first few thousand users, write volume is nowhere near the ceiling. Read-heavy
+  applications with modest write rates run on SQLite comfortably for years.
+</p>
+<p>
+  And if you outgrow it, you are not trapped. Tiknix's data layer is
+  <a href="https://redbeanphp.com/">RedBeanPHP</a>, which speaks
+  SQLite, MySQL, MariaDB, and PostgreSQL through the same bean API. Switching is a config change
+  plus a data migration:
+</p>
+<pre><code>; conf/config.ini — SQLite (default)
+[database]
+type = "sqlite"
+path = "database/tiknix.db"
+
+; conf/config.ini — MySQL
+[database]
+type = "mysql"
+host = "localhost"
+name = "tiknix"
+user = "tiknix"
+pass = "your_password"</code></pre>
+<p>
+  Your controllers do not change. That optionality is the real argument: start on the simplest
+  thing that works, with a known exit if the simple thing stops working.
+</p>
+
+<h2>SQLite is not a museum piece</h2>
+<p>
+  The strongest argument against "SQLite is a toy" is not a rebuttal — it is the ecosystem that has
+  grown around it in the last few years. Two projects are worth knowing about, because they change
+  what the ceiling looks like.
+</p>
+
+<h3>Turso: SQLite, rewritten and scaled out</h3>
+<p>
+  <a href="https://turso.tech/">Turso</a> is a ground-up rewrite of SQLite in Rust with an
+  async-first architecture, staying backwards compatible with the file format and SQL you already
+  use. It comes in two shapes: an <strong>embedded</strong> engine (currently beta) that runs
+  offline, in a browser, or on a device, and <strong>Turso Cloud</strong> (production ready), which
+  hosts unlimited SQLite databases over the network or syncs them down to your own devices.
+</p>
+<p>Three things there matter for the argument in this article:</p>
+<ul>
+  <li>
+    <strong>Databases are files, not processes.</strong> Turso's own framing — "no cold starts, no
+    scale-to-zero, no wake-up penalty." That is the same property that makes local SQLite pleasant,
+    preserved at hosted scale.
+  </li>
+  <li>
+    <strong>Massive multi-tenancy.</strong> Their pitch is scaling to billions of databases. A
+    database-per-tenant architecture is absurd with Postgres and natural with SQLite — and that
+    changes how you might isolate customers.
+  </li>
+  <li>
+    <strong>Concurrent writes are being worked on directly.</strong> Turso is running early access
+    for concurrent writes in the cloud product. The single-writer constraint discussed above is not
+    a law of nature; it is an implementation property that people are actively attacking.
+  </li>
+</ul>
+<p>
+  The relevance to a Tiknix install is optionality. You start on a local SQLite file with zero
+  operational overhead. If you outgrow it, "move to Postgres" is one exit — and "move to a hosted,
+  replicated, SQLite-compatible engine" is now another, one that does not require rewriting your
+  queries at all.
+</p>
+
+<h3>sqlite-vector: embedded databases are moving toward AI, not away from it</h3>
+<p>
+  <a href="https://github.com/sqliteai/sqlite-vector">sqlite-vector</a> is a cross-platform SQLite
+  extension for approximate nearest-neighbor search. What makes it notable is how little ceremony it
+  requires: vectors are stored as ordinary BLOBs in ordinary tables — no virtual tables, no
+  preprocessing step, no separate index structure to keep in sync.
+</p>
+<pre><code>-- load the extension, then it's just SQL
+SELECT load_extension('./vector');
+SELECT vector_init(...);
+SELECT vector_quantize(...);
+SELECT vector_quantize_scan(...);   -- or vector_full_scan()</code></pre>
+<p>
+  It supports Float32, Float16, BFloat16, Int8, UInt8, and 1-bit vectors, with L2, squared L2, L1,
+  cosine, dot product, and Hamming distance. Its <strong>TurboQuant</strong> quantization does 2/3/4-bit
+  compression with SIMD-accelerated scanning; the project's own benchmarks on 1M 768-dimension
+  vectors report roughly <strong>14.9× speedup at 0.84 recall@10</strong> for 4-bit and
+  <strong>38.3× at 0.48 recall@10</strong> for 2-bit, with storage down to about 7–13% of raw
+  Float32. It runs on iOS, Android, Windows, Linux, macOS, and WASM.
+</p>
+<p>
+  Read those numbers as the project's benchmarks on their hardware and workload, and note the
+  recall column honestly: 2-bit is dramatically faster and loses about half its top-10 accuracy.
+  Quantization is a knob, not a free win.
+</p>
+<p>
+  The broader point stands regardless of the numbers: <strong>semantic search and RAG are becoming
+  things an embedded database does</strong>, not things that require a separate vector service.
+  Turso ships native vector search in-engine — "no extensions required" — and sqlite-vector brings
+  it to stock SQLite. For an application built around AI features, "my database is a file" and "my
+  database does similarity search" are no longer opposing choices.
+</p>
+
+<h2>Why this substrate suits AI-assisted development specifically</h2>
+<p>
+  Three properties compound when an agent is writing the code:
+</p>
+<ol>
+  <li>
+    <strong>The feedback loop has no build step.</strong> An agent edits a file and the very next
+    request executes it. There is no compile, no bundle, no restart, no cache to bust. Iteration
+    latency is close to zero, which matters a great deal when the loop runs hundreds of times.
+  </li>
+  <li>
+    <strong>Training data density is enormous.</strong> PHP and SQL are among the most represented
+    languages in any model's training corpus, and the patterns are long-stable. A model writing
+    PHP 8 with PDO-backed queries is operating deep inside familiar territory rather than
+    extrapolating from a handful of examples.
+  </li>
+  <li>
+    <strong>State is a file, so rollback is a file operation.</strong> Snapshot the database and
+    the working tree before a risky change; restore both if it goes wrong. Tiknix's checkpoint and
+    rollback controls in the AI Builder rest directly on this. Reversibility is what makes it
+    reasonable to let an agent try something.
+  </li>
+</ol>
+
+<h2>The honest version of the pitch</h2>
+<p>
+  PHP and SQLite are not chosen here because they are trendy, and not out of nostalgia. They are
+  chosen because they minimize the number of moving parts between "I wrote a line of code" and
+  "a user can see it." Fewer moving parts means fewer failure modes, faster loops, cheaper
+  hosting, and a system a single person — or a single person plus an agent — can hold in their
+  head.
+</p>
+
+<div class="callout callout-honest">
+  <span class="callout-title">Honest notes</span>
+  <ul>
+    <li><strong>SQLite serializes writes.</strong> Enable WAL mode, keep transactions short, and measure before assuming you have a problem. If sustained concurrent writes are core to your workload, start on Postgres or MySQL — the switch is supported, and doing it early is cheaper than doing it later. Turso's concurrent-write work is promising and is early access, not something to plan a launch around today.</li>
+    <li><strong>Turso Database is beta; Turso Cloud is not.</strong> The Rust rewrite is explicitly labeled beta by its authors, while the hosted product is marked production ready. Pick the one whose status matches your risk tolerance, and do not conflate the two.</li>
+    <li><strong>sqlite-vector's license needs reading before you ship.</strong> Free for open-source projects under OSI-approved licenses, governed by the Elastic License 2.0 otherwise, and <em>production use requires a commercial license from SQLite Cloud, Inc.</em> That is a business decision, not a footnote — check it before it is load-bearing.</li>
+    <li><strong>Quantization trades recall for speed.</strong> The 38× number comes with 0.48 recall@10. Benchmark against your own data and decide what accuracy your feature actually needs.</li>
+    <li><strong>Not every host is equal.</strong> SQLite on network storage (NFS, some container volume drivers) can misbehave around file locking. Keep the database file on local disk.</li>
+    <li><strong>PHP wants a real deployment discipline anyway.</strong> "Just copy the files" is a strength until two people copy different files. Deploy from Git, not from your laptop.</li>
+    <li><strong>Long-lived connections need a second process.</strong> WebSockets and background workers are not a request/response fit. Tiknix runs them as separate local services and proxies — plan for that shape rather than fighting it.</li>
+    <li><strong>APCu is optional but assumed.</strong> The caching layer degrades gracefully without it, but you lose most of the performance story. Install it — see <a href="/caching-by-default.html">the caching article</a>.</li>
+  </ul>
+</div>
+      </div>
+      <nav class="article-nav">
+        <a class="prev" href="/build-on-primitives.html"><span class="dir">&#8592; Previous</span><span class="ttl">Start From Primitives, Not From Scratch</span></a><a class="next" href="/membership-and-settings.html"><span class="dir">Next &#8594;</span><span class="ttl">The Members Table Is the Spine</span></a>
+      </nav>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="brand-logo footer-logo"></span>
+        <div>
+          <div class="footer-word">tiknix</div>
+          <div class="footer-tag">Build on primitives that already work</div>
+        </div>
+      </div>
+      <nav class="footer-links">
+        <a href="https://tiknix.com">Homepage</a>
+        <a href="https://github.com/mfrederico/tiknix">GitHub</a>
+        <a href="https://github.com/mfrederico/tiknix-tutorials">Tutorials</a>
+        <a href="/index.html">All articles</a>
+      </nav>
+    </div>
+    <div class="footer-fine">
+      Documentation written against the Tiknix source. Tiknix is released under the MIT License.
+    </div>
+  </footer>
+</div>
+</div>
+</body>
+</html>
