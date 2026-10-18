@@ -92,22 +92,35 @@ Bean::store($product);</code></pre>
   a plausible-looking mistake in fifteen files before anyone notices.
 </p>
 
-<h2>Fluid in development, frozen in production</h2>
+<h2>Fluid everywhere, with every change written down</h2>
 <p>
-  Schema-follows-code is the right behavior while you are exploring and the wrong behavior on a
-  live system — you do not want a typo'd property name silently creating a
-  <code>staus</code> column at 2am.
+  Schema-follows-code is the right behaviour while you are exploring, and it has a cost on a live
+  system: a typo'd property name silently creates a <code>staus</code> column at 2am. The textbook
+  answer is to freeze the schema in production, so RedBean throws instead.
 </p>
 <p>
-  That is what freeze mode is for. Frozen, RedBean stops altering the schema and throws instead.
-  Your development loop keeps its speed; production keeps its guarantees. The discipline to adopt
-  is straightforward:
+  Tiknix tried that and reverted it. Some tables are still created the first time a feature is
+  used, and a frozen database turned that into a live <code>no such table</code> error within
+  minutes. So the protection is different: every app runs fluid, and <strong>every automatic schema
+  change is written to the log with the line of code that caused it</strong>. A ghost column is
+  found by reading one log line, not by noticing a query that quietly returns nothing. Freezing
+  stays available per environment (<code>DB_FREEZE=true</code>) for an app whose every table is
+  declared by a seed.
 </p>
+<p>The discipline that goes with it:</p>
 <ol>
   <li>Develop fluid. Let the schema track the code while the shape is still moving.</li>
-  <li>When the shape settles, capture it in a <strong>numbered bean seed</strong> (see below) rather than as a raw SQL dump — that is the artifact your deploy replays.</li>
-  <li>Freeze in production, and apply schema changes by running the reseeder as part of the deploy.</li>
+  <li>When the shape settles, declare it in a <strong>numbered seed</strong> in
+    <code>services/Schema/Seeds/</code> — the table, and a full sample value for every column, so each
+    column gets its type from a real value rather than from a NULL or a short first one.</li>
+  <li>Let every build and update run the seeds. A seed is idempotent; running it again changes
+    nothing that is already right.</li>
 </ol>
+<p>
+  One more reason to declare a table in a seed: on SQLite, widening a column's type rebuilds the
+  table, and that rebuild has emptied a table before. A date first stored as a short value and
+  later as a full one is exactly that case. Declare dates as text from the start.
+</p>
 <p>
   You have not escaped migrations forever; you have deferred them to the point where you actually
   know what the schema should be. That is a meaningfully better trade than writing migrations for
@@ -172,7 +185,7 @@ $rows = R::getAll('SELECT status, COUNT(*) AS n FROM project GROUP BY status');<
 <div class="callout callout-honest">
   <span class="callout-title">Honest notes</span>
   <ul>
-    <li><strong>Fluid mode in production is a real hazard.</strong> Unfrozen, a typo becomes a column and a bad value becomes a widened column type. Freeze before you take real traffic.</li>
+    <li><strong>Fluid mode in production is a real trade-off.</strong> A typo becomes a column and a bad value can widen a column's type. Tiknix accepts that in exchange for lazily created tables, and makes it visible in the log rather than impossible. Declaring your tables in seeds is how you take the risk away.</li>
     <li><strong>Inferred column types are conservative.</strong> RedBean widens types to fit what it has seen. For money, precise decimals, or specific integer widths, define the column yourself rather than letting inference guess.</li>
     <li><strong><code>find()</code> returns id-keyed arrays.</strong> Not <code>0,1,2</code> — keyed by bean id. <code>array_map()</code> over one preserves those keys, and passing that straight into an <code>IN (?,?)</code> binding produces a genuinely confusing "column index out of range" error. Call <code>array_values()</code> at the source getter so every caller is safe. This one bites people; it is called out in the project's own standards for a reason.</li>
     <li><strong>Relation lists lazy-load.</strong> Convenient, and an easy path to N+1 queries inside a loop. The query cache masks a lot of it — measure rather than assume.</li>

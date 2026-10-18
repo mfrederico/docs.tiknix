@@ -15,11 +15,10 @@
   Calling someone else's API means holding their credential. That is handled by the connector
   registry and the broker model, covered in detail in
   <a href="/connections-and-broker-keys.html">Third-Party Credentials Without Sprawl</a>: encrypted
-  at rest with libsodium, one OAuth path for every registry-driven connector, tokens held only on
-  the control plane, and instances given revocable broker keys instead of the credentials
-  themselves.
+  at rest with libsodium, each app's tokens kept in that app and sealed with its own key, and
+  revocable broker keys for the few things that must stay with the platform.
 </p>
-<p>The property to carry forward: <strong>a credential lives in exactly one place, and everything else gets a capability.</strong></p>
+<p>The property to carry forward: <strong>a credential lives in exactly one place, and anything that needs it from elsewhere gets a capability.</strong></p>
 
 <h2>Surface 2 — Inbound API: keys, scopes, and one auth service</h2>
 <p>

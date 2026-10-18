@@ -2,14 +2,16 @@
         <span class="eyebrow">Tiknix</span>
         <h1>Build on primitives that already work</h1>
         <p>
-          Tiknix is a PHP application framework where membership, authentication, two-factor auth,
-          role-based permissions, an ORM, a Bootstrap design layer, data integrations, an MCP
-          gateway, and an AI build pipeline are already wired together. These articles explain what
-          each piece does, why it was built the way it was, and what you still own once you adopt it.
+          Tiknix is a platform for building apps with AI agents, on a PHP framework where
+          membership, authentication, two-factor auth, permissions, an ORM, a design layer,
+          connected services, an MCP server and an agent build pipeline are already wired together.
+          You say what you want; an agent plans it, builds it in your app's own conventions, and
+          checks it before it goes live. These articles explain what each piece does, why it was
+          built the way it was, and what you still own once you adopt it.
         </p>
         <div class="hero-actions">
-          <a class="btn btn-primary" href="/build-on-primitives.html">Start with the argument &#8594;</a>
-          <a class="btn btn-ghost" href="/authentication-included.html">Jump to authentication</a>
+          <a class="btn btn-primary" href="/building-with-ask.html">Build your first app &#8594;</a>
+          <a class="btn btn-ghost" href="/build-on-primitives.html">Start with the argument</a>
         </div>
       </section>
 
@@ -25,24 +27,19 @@
           <div class="stat-note">MySQL, MariaDB, and PostgreSQL also supported</div>
         </div>
         <div class="stat">
-          <span class="stat-label">Identity</span>
-          <div class="stat-value">Included</div>
-          <div class="stat-note">Sessions, OAuth, TOTP 2FA, recovery codes</div>
-        </div>
-        <div class="stat">
-          <span class="stat-label">Authorization</span>
-          <div class="stat-value">4 levels</div>
-          <div class="stat-note">Route permissions stored as rows, not code</div>
-        </div>
-        <div class="stat">
           <span class="stat-label">Interface</span>
           <div class="stat-value">Bootstrap</div>
-          <div class="stat-note">5.3 components, palette and type set by CSS variables</div>
+          <div class="stat-note">5.3 components; ordinary pages described as data with Ui</div>
         </div>
         <div class="stat">
-          <span class="stat-label">Agent access</span>
-          <div class="stat-value">MCP</div>
-          <div class="stat-note">One gateway endpoint, scoped keys, every call logged</div>
+          <span class="stat-label">Building</span>
+          <div class="stat-value">Ask</div>
+          <div class="stat-note">Plain words in; a planned, built and checked change out</div>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Checking</span>
+          <div class="stat-value">6 layers</div>
+          <div class="stat-note">From a blocked edit to a browser signed in as every role</div>
         </div>
       </div>
 
@@ -54,8 +51,9 @@
             vocabulary the later ones use. If you are evaluating Tiknix, read
             <a href="/build-on-primitives.html">Start From Primitives</a> and
             <a href="/php-sqlite-substrate.html">Why PHP and SQLite</a> first. If you have already
-            installed it and want to ship something, start at
-            <a href="/convention-routing.html">Convention-Based Routing</a>.
+            want to build something, start at <a href="/building-with-ask.html">Building With Ask</a>;
+            if you are writing code in a Tiknix app yourself, start at
+            <a href="/runtime-and-your-app.html">The Runtime and Your App</a>.
           </p>
           <p style="margin-bottom:0">
             Every article ends with an <strong>honest notes</strong> section: the trade-offs, the

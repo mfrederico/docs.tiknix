@@ -170,6 +170,6 @@ session.cookie_secure    = 1        ; HTTPS-only cookie</code></pre>
     <li><strong>The session is a snapshot.</strong> <code>$_SESSION['member']</code> is the member row as of login. Change someone's level and their <em>current</em> session may keep the old one until they log in again. For privilege changes that must take effect immediately, re-read the member or terminate the session.</li>
     <li><strong>Rate limiting is session-scoped.</strong> See above — pair it with edge limiting for anything internet-facing.</li>
     <li><strong>Password policy is length-only.</strong> No complexity rules, no breach-list lookup, no rotation. Deliberate, defensible, and yours to extend.</li>
-    <li><strong>The installer sets your admin password — it does not ship <code>admin123</code>.</strong> Running <code>install.sh</code> prompts you for an admin password (or generates a random one in <code>--auto</code> mode) and writes that hash to the database. The well-known <code>admin123</code> default only exists if you bypass the installer and run <code>database/init.php</code> by hand; if you take that path, change it immediately. The normal install experience never exposes it.</li>
+    <li><strong>There is no default password to forget.</strong> A new app's seeded admin password is refused at sign-in: the first sign-in goes through setup, which sets the owner's own password — and on Tiknix hosting, only the email the project was created for can complete it.</li>
   </ul>
 </div>

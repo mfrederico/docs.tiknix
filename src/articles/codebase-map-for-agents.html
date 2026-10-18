@@ -50,6 +50,23 @@
   same understanding across thirty file reads, arriving with a full context window and a partial map.
 </p>
 
+<h2>Beyond the map: what is happening, and what to build</h2>
+<p>The same server answers a few more questions an agent otherwise guesses at:</p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Tool</th><th>Answers</th></tr></thead>
+  <tbody>
+    <tr><td><code>database_schema</code></td><td>The columns the database <em>actually</em> has. RedBean adds columns on first store, so the models are not the schema, and a wrong column name can read as an empty result.</td></tr>
+    <tr><td><code>last_error</code>, <code>read_log_entries</code></td><td>What is happening right now, from the app's own log — the first thing to check when something misbehaves.</td></tr>
+    <tr><td><code>ui_pattern</code></td><td>Which pages a feature needs, from the shape of its data, with the <code>Ui</code> code to start from (see <a href="/pages-as-data.html">Pages as Data</a>).</td></tr>
+    <tr><td><code>full_validation</code></td><td>What a file or folder breaks: the RedBean and FlightPHP rules, values put into SQL, a page nothing links to, a page doing by hand what <code>Ui</code> decides.</td></tr>
+    <tr><td><code>notebook</code></td><td>What earlier runs and the owner wrote down about this project — decisions and their reasons, where things live, mistakes and their fixes.</td></tr>
+    <tr><td><code>ask_tiknix</code></td><td>Whether Tiknix's knowledge base already knows the answer to a platform problem, before the agent asks its user about support.</td></tr>
+    <tr><td><code>application_info</code></td><td>Versions, the app's name and address, its plugins and their state.</td></tr>
+  </tbody>
+</table>
+</div>
+
 <h2>Why this works better than "read the codebase"</h2>
 <p>Three reasons, in order of importance.</p>
 <h3>1. It is complete</h3>
@@ -135,7 +152,7 @@
   <ul>
     <li><strong>Structure is not semantics.</strong> The digest tells an agent that <code>lib/Mailer</code> exists and has a <code>sendWelcome()</code> method. It does not say the method assumes Mailgun is configured, or that it silently no-ops when mail is disabled. Docblocks and file reads still matter.</li>
     <li><strong>Introspection has a cost.</strong> The digest is token-bounded, but it is not free. For a two-line fix it is overhead. It earns its cost when adding a capability, which is exactly when it is specified as mandatory.</li>
-    <li><strong>Tool availability varies by context.</strong> These are MCP tools. Inside an AI Builder instance they are present; in a plain editor session they need the MCP server configured. An agent that cannot call them falls back to grepping — and to the failure mode at the top of this article.</li>
+    <li><strong>Tool availability varies by context.</strong> These are MCP tools. Every build task and every agent connected to a Tiknix app has them; in a plain editor session they need the app's MCP server configured. An agent that cannot call them falls back to grepping — and to the failure mode at the top of this article.</li>
     <li><strong>The rule needs enforcement to hold.</strong> "Call reuse_digest first" is an instruction, and instructions decay over a long session. The plan pipeline bakes the digest into the planner's input rather than trusting it to remember, which is the more reliable design.</li>
     <li><strong>Reuse can be taken too far.</strong> "Add it to the existing controller" is right until the controller is 2,000 lines and every task touching it has to serialize. Tiknix's own planner rules flag megafiles specifically because the reuse bias has this failure mode.</li>
   </ul>

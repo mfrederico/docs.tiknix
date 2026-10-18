@@ -43,8 +43,8 @@
 <p>
   Long-lived connections and background work are the honest weak spots. WebSockets, streaming, and
   persistent worker processes want a different runtime shape. Tiknix does not pretend otherwise —
-  the AI Builder's terminal and chat channels run through separate Node and PHP bridge processes on
-  local ports, and the web tier proxies to them. That is the right answer, and it's worth knowing
+  the Builder's terminal runs through a separate PHP WebSocket bridge process on a local port, and
+  the web tier proxies to it. That is the right answer, and it's worth knowing
   up front that "everything is a request" has a boundary.
 </p>
 
@@ -60,7 +60,7 @@
 <ul>
   <li><strong>No database server.</strong> No port, no daemon, no credentials, no separate host to secure or patch. One less service that can be down.</li>
   <li><strong>Backups are <code>cp</code>.</strong> Your entire application state is one file at <code>database/tiknix.db</code>. Copying it is a backup. Copying it back is a restore. (Use <code>sqlite3 .backup</code> or the backup API for a consistent copy while writes are in flight.)</li>
-  <li><strong>Environments are trivially reproducible.</strong> A workspace clone is a file copy. This is exactly how <code>lib/WorkspaceManager.php</code> provisions isolated instances for AI Builder tasks: fresh SQLite database, fresh config, fully independent.</li>
+  <li><strong>Environments are trivially reproducible.</strong> A copy of the database is a file. This is exactly how every build task gets its own sandbox: a consistent copy of the app's database (<code>VACUUM INTO</code>), its own config, its own server, fully independent of the live app.</li>
   <li><strong>Reads are extremely fast.</strong> No network hop, no serialization across a socket. An in-process query against a warm page cache is measured in microseconds.</li>
 </ul>
 
@@ -191,8 +191,8 @@ SELECT vector_quantize_scan(...);   -- or vector_full_scan()</code></pre>
   </li>
   <li>
     <strong>State is a file, so rollback is a file operation.</strong> Snapshot the database and
-    the working tree before a risky change; restore both if it goes wrong. Tiknix's checkpoint and
-    rollback controls in the AI Builder rest directly on this. Reversibility is what makes it
+    the working tree before a risky change; restore both if it goes wrong. The checkpoint
+    each Builder request takes, and its Undo, rest directly on this. Reversibility is what makes it
     reasonable to let an agent try something.
   </li>
 </ol>

@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How Work Is Checked — Tiknix Docs</title>
+<meta name="description" content="Six layers, each catching what the last cannot — from a blocked edit to a browser that signs in as every kind of user — and how what they find becomes a rule.">
+<link rel="icon" href="/img/tiknix.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Figtree:ital,wght@0,300..900;1,300..900&family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,100..900,0..100&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/docs.css">
+<script src="/assets/docs.js"></script>
+</head>
+<body>
+<div class="shell">
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+<aside class="sidebar" id="sidebar">
+  <a class="sidebar-brand" href="/index.html">
+    <span class="brand-logo"></span>
+    <span class="brand-word">tiknix</span>
+    <span class="brand-sub">docs</span>
+  </a>
+  <nav class="nav">
+    <div class="nav-heading">Index</div>
+    <a class="nav-link" href="/index.html"><span class="nav-num">&#9737;</span>All articles</a>
+    <div class="nav-heading">Foundations</div>
+    <a class="nav-link" href="/build-on-primitives.html"><span class="nav-num">01</span>Start From Primitives, Not From Scratch</a>
+    <a class="nav-link" href="/runtime-and-your-app.html"><span class="nav-num">02</span>The Runtime and Your App</a>
+    <a class="nav-link" href="/php-sqlite-substrate.html"><span class="nav-num">03</span>Why PHP and SQLite Are a Serious Choice in 2026</a>
+    <a class="nav-link" href="/membership-and-settings.html"><span class="nav-num">04</span>The Members Table Is the Spine</a>
+    <a class="nav-link" href="/convention-routing.html"><span class="nav-num">05</span>Convention-Based Routing: A URL Is a Method Name</a>
+    <a class="nav-link" href="/data-without-migrations.html"><span class="nav-num">06</span>Modeling Data Without a Migration Backlog</a>
+    <a class="nav-link" href="/bootstrap-design-primitive.html"><span class="nav-num">07</span>Bootstrap as a Design Primitive</a>
+    <a class="nav-link" href="/pages-as-data.html"><span class="nav-num">08</span>Pages as Data</a>
+    <div class="nav-heading">Security &amp; Access</div>
+    <a class="nav-link" href="/authentication-included.html"><span class="nav-num">09</span>The Login You Don&#x27;t Have to Write</a>
+    <a class="nav-link" href="/two-factor-included.html"><span class="nav-num">10</span>Two-Factor Authentication as a Config Switch</a>
+    <a class="nav-link" href="/permissions-as-data.html"><span class="nav-num">11</span>Permissions as Data, Not If-Statements</a>
+    <a class="nav-link" href="/teams-and-ownership.html"><span class="nav-num">12</span>Teams, Ownership, and Sharing Work Safely</a>
+    <div class="nav-heading">Building with AI</div>
+    <a class="nav-link" href="/building-with-ask.html"><span class="nav-num">13</span>Building With Ask</a>
+    <a class="nav-link" href="/codebase-map-for-agents.html"><span class="nav-num">14</span>Give Your AI Assistant a Map, Not a Flashlight</a>
+    <a class="nav-link" href="/mcp-gateway.html"><span class="nav-num">15</span>MCP as a Primitive: One Endpoint for Every Agent</a>
+    <a class="nav-link" href="/agent-orchestration.html"><span class="nav-num">16</span>How a Request Is Built</a>
+    <a class="nav-link active" href="/how-work-is-checked.html"><span class="nav-num">17</span>How Work Is Checked</a>
+    <a class="nav-link" href="/pipelines.html"><span class="nav-num">18</span>Pipelines: Automation That Ships With the App</a>
+    <a class="nav-link" href="/scaffolding-and-reuse.html"><span class="nav-num">19</span>Scaffolding Is a Reading Exercise</a>
+    <div class="nav-heading">Operations</div>
+    <a class="nav-link" href="/data-integration.html"><span class="nav-num">20</span>Five Ways Data Crosses the Boundary</a>
+    <a class="nav-link" href="/connections-and-broker-keys.html"><span class="nav-num">21</span>Third-Party Credentials Without Sprawl</a>
+    <a class="nav-link" href="/connected-services.html"><span class="nav-num">22</span>Connected Services</a>
+    <a class="nav-link" href="/caching-by-default.html"><span class="nav-num">23</span>Caching You Don&#x27;t Have to Think About</a>
+    <a class="nav-link" href="/feature-flags-and-sidecars.html"><span class="nav-num">24</span>Growing Without Bloating the Core</a>
+    <a class="nav-link" href="/production-checklist.html"><span class="nav-num">25</span>From Localhost to Production: The Honest Checklist</a>
+  </nav>
+  <div class="sidebar-foot">
+    Written against the Tiknix source. <a href="/index.html">All articles</a>
+  </div>
+</aside>
+<div class="main">
+  <header class="topbar">
+    <button class="btn-icon menu-toggle" id="menuToggle" type="button" aria-label="Open menu">&#9776;</button>
+    <div class="topbar-title">
+      <span class="eyebrow">Building with AI</span>
+      <strong>How Work Is Checked</strong>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-icon" id="themeToggle" type="button" aria-label="Toggle theme"><span id="themeIcon">&#9728;</span></button>
+    </div>
+  </header>
+  <main class="content">
+    <article class="narrow">
+      <header class="article-header">
+        <div class="meta">
+          <span class="chip chip-ai">Building with AI</span>
+          <span class="eyebrow">Article 17 of 25</span>
+          <span class="eyebrow">10 min read</span>
+        </div>
+        <h1>How Work Is Checked</h1>
+        <p class="lede">Six layers, each catching what the last cannot — from a blocked edit to a browser that signs in as every kind of user — and how what they find becomes a rule.</p>
+      </header>
+      <div class="article-body">
+<p>
+  Generating code stopped being the hard part some time ago. Knowing whether it works is the hard
+  part, and it is where AI-built software usually fails: a change that reads plausibly, compiles,
+  and breaks a page nobody opened. Plausible but unverified code is not a gift; it is a debugging
+  session you have not started yet.
+</p>
+<p>
+  So Tiknix spends most of its machinery on checking, in layers. Each layer catches what the one
+  before it cannot, and each is evidence the platform gathers itself — never a claim an agent
+  makes about its own work.
+</p>
+
+<h2>Layer 1: before a file is written</h2>
+<p>
+  Every write an agent makes passes through an edit hook that <strong>blocks</strong> what is
+  never right in a Tiknix app: an edit under the read-only runtime, a runtime file copied over by
+  hand, raw <code>R::</code> calls the <code>Bean::</code> wrapper covers, a value interpolated
+  into SQL (an IN list built with <code>Bean::genSlots()</code> is fine), a flash message no page
+  shows. The block says what to do instead. Cheap mistakes are stopped at the keyboard, where they
+  cost nothing.
+</p>
+
+<h2>Layer 2: inside the task</h2>
+<p>
+  A task works in a sandbox — its own copy of the app's data, its own server, three people already
+  signed in — so it can check what it built instead of guessing. Before it may finish:
+</p>
+<ul>
+  <li><strong>The page check</strong> asks for every page it changed, as a visitor and as each of
+    the three people, and names any that answer 500 with the log line that says why.</li>
+  <li><strong>The app's tests</strong> run before and after. What already failed is not the
+    task's; what newly fails is written on it.</li>
+  <li><strong>The lent browser.</strong> Every build borrows a real browser from the platform's QA
+    host. A task that changes what a person sees is not merged until that browser has opened each
+    changed page — the sandbox records which address asked for which page, so this is proof, not
+    a promise. If the browser could not be used, the task must say why.</li>
+  <li><strong><code>full_validation</code></strong> warns about what a page does by hand that
+    <code>Ui</code> decides (see <a href="/pages-as-data.html">Pages as Data</a>) and about a page
+    nothing links to — a feature nobody can reach by clicking is not done.</li>
+</ul>
+
+<h2>Layer 3: a second reading</h2>
+<p>
+  A task ranked Medium risk or above is read again, read-only, against the checks it promised; a
+  Critical one is built twice and the other attempt's tests are run against the one kept (see
+  <a href="/agent-orchestration.html">How a Request Is Built</a>). What either finds becomes a fix
+  task in the same request.
+</p>
+
+<h2>Layer 4: the check after the build</h2>
+<p>
+  When a request's tasks are merged, the app is checked from outside, as it now runs. An agent with
+  a browser signs in as each kind of user — root, admin, member — exercises what the request
+  changed, and takes a screenshot of each changed page at desktop (1280×800) and phone (390×844)
+  width. The screenshots appear under the request in Ask, each beside the check it proves, and are
+  emailed to the owner with the verdict.
+</p>
+<p>What it finds is not left as a report:</p>
+<ul>
+  <li>each failure becomes a problem Tiknix found, shown in Ask with its screenshots and a
+    <strong>Fix it</strong> button;</li>
+  <li>on every project, it also starts its own fix, which is checked again when it lands — at
+    most two rounds, then it waits for a person;</li>
+  <li>the failure is written into the project's notebook as a lesson, so the next build looks for
+    it before calling its own work done.</li>
+</ul>
+<p>
+  The share of requests that pass this check the first time, without a fix, is the number that
+  says whether building is getting better. Tiknix's Insights page shows it to the platform's admins, per project and overall
+  (on 16 October 2026: 88 of 134 requests over the previous 30 days, 66%).
+</p>
+
+<h2>Layer 5: the tests you keep</h2>
+<p>
+  <strong>QA Testing</strong> holds tests described once and run from outside the app: web pages
+  driven in a browser, APIs, MCP servers. They run when you ask, on a schedule (every five minutes
+  to once a day), and — after every build is checked — all of a project's active tests run once
+  more, because what was just built should not break what was already working. You hear when a
+  suite turns red, and again when it is green; not on every run. A run uses no model, so it costs
+  no tokens.
+</p>
+
+<h2>Layer 6: what was learned, kept</h2>
+<p>
+  A check that only fixes this build has done half its job. The rest is making the next build not
+  need it:
+</p>
+<ol>
+  <li>Agents write down what tripped them, as notebook lessons, project by project.</li>
+  <li>Lessons about the platform — true in any project — are offered to Tiknix's knowledge base,
+    where a person publishes them. A project's agent asks the knowledge base before it asks its
+    user about support.</li>
+  <li>The same lesson written down again is counted, not discarded. A lesson that has come up
+    three times is a mistake agents keep making, and the knowledge desk says it should become a
+    rule in the agents' guidelines — which every agent reads before it starts, rather than only one
+    that thinks to ask. If it keeps coming up after that, the rule is not working, and the desk
+    says so.</li>
+</ol>
+
+<div class="callout callout-honest">
+  <span class="callout-title">Honest notes</span>
+  <ul>
+    <li><strong>A sandbox cannot reach connected services.</strong> Pages that send mail, store a
+      photo or call QuickBooks are checked for their "not connected" behaviour inside a task; only
+      the check after the build sees them work for real.</li>
+    <li><strong>The check after the build looks at what the request changed.</strong> It is not a
+      regression suite for the whole app. That is what QA Testing's kept tests are for — and they
+      only exist once someone writes them.</li>
+    <li><strong>Automatic fixes spend tokens without asking.</strong> They are capped at two
+      rounds and stay within each agent's spending limit, and they can be switched off per
+      project; but on, they do run unattended.</li>
+    <li><strong>The first-time pass rate is honest, not flattering.</strong> It counts every
+      request the check looked at, including ones whose failure was the check's own browser. Read
+      it as a trend.</li>
+  </ul>
+</div>
+      </div>
+      <nav class="article-nav">
+        <a class="prev" href="/agent-orchestration.html"><span class="dir">&#8592; Previous</span><span class="ttl">How a Request Is Built</span></a><a class="next" href="/pipelines.html"><span class="dir">Next &#8594;</span><span class="ttl">Pipelines: Automation That Ships With the App</span></a>
+      </nav>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="brand-logo footer-logo"></span>
+        <div>
+          <div class="footer-word">tiknix</div>
+          <div class="footer-tag">Build on primitives that already work</div>
+        </div>
+      </div>
+      <nav class="footer-links">
+        <a href="https://tiknix.com">Homepage</a>
+        <a href="https://github.com/mfrederico/tiknix">GitHub</a>
+        <a href="https://github.com/mfrederico/tiknix-tutorials">Tutorials</a>
+        <a href="/index.html">All articles</a>
+      </nav>
+    </div>
+    <div class="footer-fine">
+      Documentation written against the Tiknix source. Tiknix is released under the MIT License.
+    </div>
+  </footer>
+</div>
+</div>
+</body>
+</html>

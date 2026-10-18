@@ -1,181 +1,126 @@
 <p>
-  A framework's defaults optimize for the first ten minutes: install it, log in, see something
-  work. Those defaults are chosen for a laptop on a private network with one trusted user — you.
+  A framework's defaults optimise for the first ten minutes: install it, sign in, see something
+  work. Production has different requirements, and the gap between the two is not a flaw. It is a
+  step, and the only real failure is not knowing the step exists.
 </p>
 <p>
-  Production has different requirements, and the gap between the two is not a flaw in the
-  framework. It is a step in the process, and the only real failure is not knowing the step exists.
-  This is that step, made explicit.
+  Most Tiknix apps now run on Tiknix's own hosting, where much of that step is done before the app
+  answers its first request. This checklist says what is already handled there, what is still the
+  owner's, and — for an app run on your own server — the rest.
 </p>
 
-<h2>The five that actually matter</h2>
-<p>If you do nothing else on this page, do these.</p>
+<h2>Already done on Tiknix hosting</h2>
+<ul>
+  <li><strong>Its own container.</strong> Each app runs alone, with only <code>public/</code> served;
+    config, database, logs and <code>secure/</code> are not reachable over HTTP.</li>
+  <li><strong>Production settings.</strong> <code>environment = "production"</code> and
+    <code>debug = false</code>, so no stack trace reaches a browser and the session cookie is marked
+    Secure (HttpOnly and SameSite=Lax are always on).</li>
+  <li><strong>No known password.</strong> The seeded admin password is refused at sign-in; the
+    first sign-in sets the owner's own, and only the owner's email can complete setup.</li>
+  <li><strong>Secrets in <code>secure/</code></strong>, readable by the app alone, with each app's
+    connections sealed by its own key.</li>
+  <li><strong>Uploads off the disk.</strong> Files people upload go to the app's bucket, not to a
+    directory the web server could execute.</li>
+  <li><strong>Runtime updates</strong> applied as releases go out, never in the middle of a build.</li>
+  <li><strong>Undo.</strong> Each request's build takes a checkpoint of code and data first.</li>
+</ul>
 
-<h3>1. Set (or confirm) the admin password</h3>
-<p>
-  If you installed with <code>install.sh</code>, you were already prompted for an admin password
-  (or given a random one in <code>--auto</code> mode) — so this is a confirmation step, not a fix.
-  The well-known <code>admin123</code> only exists if you ran <code>database/init.php</code> by hand
-  and skipped the installer; on that path, change it <em>before</em> the host is reachable. Either
-  way, verify you cannot log in with <code>admin</code>/<code>admin123</code> before you go live.
-</p>
+<h2>Still the owner's</h2>
 
-<h3>2. Turn off build mode</h3>
-<pre><code>[app]
-build_mode = false</code></pre>
+<h3>1. Permission rows, as seeds</h3>
 <p>
-  Build mode auto-creates a permission row for any route that lacks one — and grants access. On a
-  public host that is a system that permits whatever it has not yet been told to refuse. It is a
-  development accelerator; it is not a deployment setting.
-</p>
-
-<h3>3. Audit the permission table</h3>
-<p>
-  This is the one people skip, and it is the most important. A <code>controller::method</code> pair
-  with no <code>authcontrol</code> row <strong>defaults to public access</strong>. A missing row is
-  not a locked door.
+  Every route needs an <code>authcontrol</code> row, shipped as a seed. Build mode stays on in every
+  app, and what it does is narrow: the first request to a route with no row creates one at
+  <strong>admin only</strong> (a short list of public pages — the home page, setup — excepted). So a
+  forgotten row locks a page rather than opening it. The rule that follows: seed a route's row
+  <em>before</em> anyone opens it, with <code>PermissionCache::seedRule()</code>, which also corrects
+  an automatic row it finds.
 </p>
 <pre><code>-- What can an anonymous visitor reach?
-SELECT control, method, level FROM authcontrol WHERE level >= 101 ORDER BY control;
+SELECT control, method, level FROM authcontrol WHERE level &gt;= 101 ORDER BY control;
+-- Rows build mode made, still waiting for a decision
+SELECT control, method, level, description FROM authcontrol WHERE description LIKE 'Auto-generated permission for%';</code></pre>
 
--- Which controllers have no wildcard fallback at all?
-SELECT DISTINCT control FROM authcontrol WHERE method = '*';</code></pre>
-<p>
-  Cross-reference the second query against your <code>controls/</code> directory. Every controller
-  should have an explicit wildcard, so that a method someone adds later inherits a sane default
-  instead of falling through to public. Then re-check after every deploy that adds routes.
-</p>
-
-<h3>4. Session cookie security comes from <code>environment</code></h3>
-<pre><code>[app]
-environment = "production"</code></pre>
-<p>
-  This is the same switch as item 5, and it does double duty. Tiknix hardens the session cookie in
-  code at startup — <code>HttpOnly</code> and <code>SameSite=Lax</code> are always on — and marks the
-  cookie <code>Secure</code> <em>automatically</em> when <code>environment = production</code>. There
-  is no separate <code>secure</code> flag to flip. Get <code>environment</code> right and the
-  HTTPS-only cookie follows; leave it non-production behind HTTPS and your session cookie will happily
-  travel over any plain-HTTP request. Consider <code>SameSite=Strict</code> if you have no
-  cross-site flows.
-</p>
-
-<h3>5. Turn off debug output</h3>
-<pre><code>[app]
-environment = "production"
-debug       = false
-
-[logging]
-level = "INFO"      ; DEBUG in production is a disk-space and privacy problem</code></pre>
-<p>
-  Debug mode renders stack traces to the browser. Stack traces contain file paths, class names,
-  query fragments, and occasionally values — a free architecture diagram for anyone probing your
-  app.
-</p>
-
-<h2>Then these</h2>
-
-<h3>Protect the config file</h3>
-<p>
-  <code>conf/config.ini</code> holds your database credentials, your <code>app_key</code>, your
-  mail credentials, and your sidecar SSO secrets. It must be out of version control, unreadable by
-  the web server as a static file, and backed up somewhere you can find in an emergency. Losing
-  <code>app_key</code> means every encrypted connection token is permanently unrecoverable.
-</p>
-
-<h3>Freeze the schema</h3>
-<p>
-  RedBeanPHP's fluid mode is a development feature. Frozen, a typo throws instead of silently
-  creating a <code>staus</code> column at 2am. Freeze in production and apply schema changes
-  deliberately as part of a deploy.
-</p>
-
-<h3>Decide your 2FA policy</h3>
+<h3>2. Your two-factor policy</h3>
 <pre><code>[security]
 two_factor_enabled = true
-two_factor_enforce = true      ; or false for optional during rollout</code></pre>
+two_factor_enforce = true   ; false = optional ("Skip for now")</code></pre>
 <p>
-  If you have admin accounts on a public host, enforce it. If you need a gentler rollout, run
-  optional for a couple of weeks — users are prompted and may skip — then enforce. Write down your
-  account-recovery procedure <em>before</em> you enforce, because lost-authenticator tickets start
-  the same day.
+  Two-factor is on for admins by default, and optional. If your app has admins on a public address,
+  enforce it — and write down how someone who loses their phone gets back in
+  (<code>clitool --user=… --reset-2fa</code>) before you do.
 </p>
 
-<h3>File permissions and ownership</h3>
-<pre><code>chmod -R 755 .
-chmod -R 775 log/ cache/ uploads/     # prefer group-writable over 777
-chown -R www-data:www-data .</code></pre>
+<h3>3. Your domains</h3>
 <p>
-  The install docs suggest <code>777</code> on writable directories to get people running quickly.
-  On a shared or public host, prefer <code>775</code> with correct group ownership — world-writable
-  directories are a local privilege-escalation gift.
-</p>
-<p>
-  Separately: <code>uploads/</code> must never execute. If a user can upload a <code>.php</code>
-  file and then request it, you have handed over the server. Serve uploads from a location with
-  script execution disabled, and validate types on the way in.
+  An app answers on its Tiknix address from the start. Your own domain is added on the Deploy page;
+  each domain can be its own site, with its own mail sender and its own files.
 </p>
 
-<h3>Only <code>public/</code> is the web root</h3>
+<h3>4. Your connections</h3>
 <p>
-  The document root points at <code>public/</code>. If it points at the project root instead, your
-  configuration, logs, and database file are all fetchable over HTTP. Verify by requesting
-  <code>/conf/config.ini</code> and <code>/database/tiknix.db</code> and confirming both 404.
+  Mail, storage, video, texts and accounting are connections you make under Connections. Until you
+  do, the pages that need them say so. Check each from the live app once — a build task's sandbox
+  never has them.
 </p>
 
-<h3>Rate limiting at the edge</h3>
+<h3>5. The logs, read</h3>
 <p>
-  The built-in limiter is session-backed: it stops an ordinary attacker in a browser and a naive
-  script that keeps cookies. It does not stop a distributed attempt where each client starts fresh.
-  Add limits at the reverse proxy, a WAF, or fail2ban against the access log.
+  New hosted apps log at <code>DEBUG</code>. Turn it down to <code>INFO</code> once the app is
+  settled — DEBUG in production is a disk and a privacy cost. Errors on the live app reach the
+  Builder as problems Tiknix found; the rest of the log is yours to read.
 </p>
 
-<h3>Remove or lock down development surfaces</h3>
+<h3>6. Data you cannot lose</h3>
 <p>
-  The <code>Test</code> and <code>Demo</code> controllers exist for development. Give them explicit
-  <code>authcontrol</code> rows at ROOT level or delete them. Same for any scaffold or install route
-  that should not exist post-setup.
+  Checkpoints are for undoing a build, not a backup strategy. If the app holds data that cannot be
+  recreated, keep copies you control, off the machine — and restore one somewhere at least once. An
+  untested backup is a belief.
 </p>
 
-<h3>Backups you have actually restored</h3>
-<p>
-  With SQLite this is unusually easy — the database is one file — which is precisely why it is easy
-  to skip. Use <code>sqlite3 .backup</code> or the backup API for a consistent copy while writes are
-  in flight, store copies off the machine, and <strong>restore one into a scratch environment at
-  least once</strong>. An untested backup is a belief, not a backup.
-</p>
+<h2>On your own server, also</h2>
+<ul>
+  <li><strong>Only <code>public/</code> is the web root.</strong> Request <code>/conf/config.ini</code>
+    and <code>/database/</code> and confirm both 404.</li>
+  <li><strong>Set <code>environment = "production"</code> and <code>debug = false</code>.</strong> The
+    Secure cookie flag follows the first.</li>
+  <li><strong>Protect <code>conf/</code> and <code>secure/</code>.</strong> Out of version control,
+    not readable by other users, backed up where you can find them. Losing
+    <code>secure/connections.key</code> means every connection must be made again.</li>
+  <li><strong>Prefer 775 with the right group to 777.</strong> World-writable directories are a local
+    privilege-escalation gift.</li>
+  <li><strong>Rate-limit at the edge.</strong> The built-in limiter is session-based; it does not stop
+    a distributed attempt where every client starts fresh.</li>
+  <li><strong>Lock down development surfaces</strong> — the <code>Demo</code> controller and anything
+    like it — with explicit ROOT rows, or remove them.</li>
+  <li><strong>Deploy from git and keep the checkout clean</strong>, so <code>git status</code> tells
+    you the truth. A hand-edited file on the server is an incident to reconcile.</li>
+</ul>
 
-<h3>Know where the logs are and read them</h3>
-<p>
-  Monolog writes to <code>log/</code> with daily rotation and 30-day retention. The dispatcher logs
-  permission denials, failed logins, controller errors, and cache behavior. That is a genuinely
-  useful stream — but only if something surfaces it. Ship logs somewhere with alerting, or at
-  minimum set a recurring reminder to read them.
-</p>
-
-<h2>A deployment discipline, not a deployment</h2>
-<p>
-  PHP's "copy the files" model is a strength right up until two people copy different files. Deploy
-  from Git, tag what you ship, and keep the production checkout clean so <code>git status</code>
-  tells you the truth. The ability to hotfix a file on the server is real and occasionally
-  necessary — treat every use of it as an incident to reconcile, not a workflow.
-</p>
+<h2>Two switches that are no longer advice</h2>
+<p>Earlier versions of this checklist said to do these. Do not:</p>
+<ul>
+  <li><strong>Turning build mode off.</strong> With it off, a route without a row is
+    <em>public</em>. With it on, such a route becomes admin-only on first use. On is the safer
+    state.</li>
+  <li><strong>Freezing the schema.</strong> Some tables are still created on first use, and a
+    frozen database turns that into a live error. Instead, every automatic schema change is written
+    to the log with the line that caused it. Freezing is available per environment
+    (<code>DB_FREEZE=true</code>) for an app whose every table has a seed.</li>
+</ul>
 
 <div class="callout callout-honest">
   <span class="callout-title">Honest notes</span>
   <ul>
-    <li><strong>This list is not exhaustive and is not a security audit.</strong> It is the framework-specific set. TLS configuration, OS patching, SSH hardening, firewall rules, and dependency updates are still yours, and no framework checklist covers them.</li>
-    <li><strong>The permission-table audit is the highest-value item here.</strong> Public-by-default for unknown routes is the single behavior most likely to expose something you did not intend. Automate the check if you can — a test that fails when a controller has no wildcard row is thirty lines and pays for itself.</li>
-    <li><strong>Defaults drift back.</strong> A fresh clone, a new workspace, or a restored config can reintroduce development settings. Verify the config on the running host, not in your repository.</li>
-    <li><strong>Some hardening costs usability.</strong> Enforced 2FA generates support load; strict SameSite breaks some cross-site flows; short session lifetimes annoy people. Make those trade-offs deliberately rather than discovering them in production.</li>
-    <li><strong>Do this before launch, not after.</strong> Every item is minutes of work on an unlaunched app and a scramble on a live one.</li>
+    <li><strong>This is not a security audit.</strong> It is the framework-specific set. On your own
+      server, TLS, OS patching, SSH and firewall rules are still yours.</li>
+    <li><strong>The permission table is still the highest-value check.</strong> Build mode makes a
+      forgotten row fail closed, but a row seeded at the wrong level is still wrong. Read the
+      anonymous-access query after every request that adds routes.</li>
+    <li><strong>Some hardening costs usability.</strong> Enforced 2FA brings support load; short
+      sessions annoy people. Make those trade-offs on purpose.</li>
+    <li><strong>Do this before launch.</strong> Every item is minutes on an unlaunched app and a
+      scramble on a live one.</li>
   </ul>
 </div>
-
-<p>
-  This is the last article in the series. If you started at
-  <a href="/build-on-primitives.html">Start From Primitives</a>, the arc was: choose a substrate
-  that already works, inherit the parts everybody needs, keep the conventions tight enough that
-  humans and agents write the same code — and then do the unglamorous work of turning development
-  defaults into production ones. That last part has never been automatable, and it is where a
-  system earns the right to be trusted.
-</p>

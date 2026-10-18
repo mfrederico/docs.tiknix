@@ -10,12 +10,12 @@
 </p>
 
 <h2>What it generates</h2>
-<pre><code>php cli/scaffold.php invoice model controller views</code></pre>
+<pre><code>php scripts/clitool.php --scaffold=model,controller,view --bean=invoice   # --scaffold=all adds an API controller</code></pre>
 <p>From a bean name, it produces:</p>
 <ul>
   <li>a FUSE model in <code>models/</code></li>
   <li>a CRUD controller, or an API controller, in <code>controls/</code></li>
-  <li>index and edit views in <code>views/</code></li>
+  <li>index and edit views in <code>views/</code>, written with <code>Ui::table</code> and <code>Ui::form</code> like every other page of the app (see <a href="/pages-as-data.html">Pages as Data</a>)</li>
 </ul>
 <p>
   The interesting part is where it gets the field list. It <strong>introspects the existing
@@ -29,7 +29,7 @@
 </p>
 
 <h2>Types map to widgets, and the map is a file</h2>
-<pre><code>// lib/Scaffold/FieldRegistry.php
+<pre><code>// the runtime's lib/Scaffold/FieldRegistry.php
 private array $typeWidgetMap = [
     'string'   => 'text',      'text'  => 'textarea',
     'int'      => 'number',    'float' => 'number',

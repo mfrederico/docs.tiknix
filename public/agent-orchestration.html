@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Plan With the Expensive Model, Execute With the Cheap One — Tiknix Docs</title>
-<meta name="description" content="The planner/worker/auditor pipeline: who is allowed to make design decisions, who merges, and why concurrency stays at three.">
+<title>How a Request Is Built — Tiknix Docs</title>
+<meta name="description" content="One request from plan to live: who makes design decisions, how tasks are ranked, built side by side, read twice or built twice, and merged.">
 <link rel="icon" href="/img/tiknix.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,28 +26,33 @@
     <a class="nav-link" href="/index.html"><span class="nav-num">&#9737;</span>All articles</a>
     <div class="nav-heading">Foundations</div>
     <a class="nav-link" href="/build-on-primitives.html"><span class="nav-num">01</span>Start From Primitives, Not From Scratch</a>
-    <a class="nav-link" href="/php-sqlite-substrate.html"><span class="nav-num">02</span>Why PHP and SQLite Are a Serious Choice in 2026</a>
-    <a class="nav-link" href="/membership-and-settings.html"><span class="nav-num">03</span>The Members Table Is the Spine</a>
-    <a class="nav-link" href="/convention-routing.html"><span class="nav-num">04</span>Convention-Based Routing: A URL Is a Method Name</a>
-    <a class="nav-link" href="/data-without-migrations.html"><span class="nav-num">05</span>Modeling Data Without a Migration Backlog</a>
-    <a class="nav-link" href="/bootstrap-design-primitive.html"><span class="nav-num">06</span>Bootstrap as a Design Primitive</a>
+    <a class="nav-link" href="/runtime-and-your-app.html"><span class="nav-num">02</span>The Runtime and Your App</a>
+    <a class="nav-link" href="/php-sqlite-substrate.html"><span class="nav-num">03</span>Why PHP and SQLite Are a Serious Choice in 2026</a>
+    <a class="nav-link" href="/membership-and-settings.html"><span class="nav-num">04</span>The Members Table Is the Spine</a>
+    <a class="nav-link" href="/convention-routing.html"><span class="nav-num">05</span>Convention-Based Routing: A URL Is a Method Name</a>
+    <a class="nav-link" href="/data-without-migrations.html"><span class="nav-num">06</span>Modeling Data Without a Migration Backlog</a>
+    <a class="nav-link" href="/bootstrap-design-primitive.html"><span class="nav-num">07</span>Bootstrap as a Design Primitive</a>
+    <a class="nav-link" href="/pages-as-data.html"><span class="nav-num">08</span>Pages as Data</a>
     <div class="nav-heading">Security &amp; Access</div>
-    <a class="nav-link" href="/authentication-included.html"><span class="nav-num">07</span>The Login You Don&#x27;t Have to Write</a>
-    <a class="nav-link" href="/two-factor-included.html"><span class="nav-num">08</span>Two-Factor Authentication as a Config Switch</a>
-    <a class="nav-link" href="/permissions-as-data.html"><span class="nav-num">09</span>Permissions as Data, Not If-Statements</a>
-    <a class="nav-link" href="/teams-and-ownership.html"><span class="nav-num">10</span>Teams, Ownership, and Sharing Work Safely</a>
+    <a class="nav-link" href="/authentication-included.html"><span class="nav-num">09</span>The Login You Don&#x27;t Have to Write</a>
+    <a class="nav-link" href="/two-factor-included.html"><span class="nav-num">10</span>Two-Factor Authentication as a Config Switch</a>
+    <a class="nav-link" href="/permissions-as-data.html"><span class="nav-num">11</span>Permissions as Data, Not If-Statements</a>
+    <a class="nav-link" href="/teams-and-ownership.html"><span class="nav-num">12</span>Teams, Ownership, and Sharing Work Safely</a>
     <div class="nav-heading">Building with AI</div>
-    <a class="nav-link" href="/codebase-map-for-agents.html"><span class="nav-num">11</span>Give Your AI Assistant a Map, Not a Flashlight</a>
-    <a class="nav-link" href="/mcp-gateway.html"><span class="nav-num">12</span>MCP as a Primitive: One Endpoint for Every Agent</a>
-    <a class="nav-link active" href="/agent-orchestration.html"><span class="nav-num">13</span>Plan With the Expensive Model, Execute With the Cheap One</a>
-    <a class="nav-link" href="/pipelines.html"><span class="nav-num">14</span>Pipelines: Automation That Ships With the App</a>
-    <a class="nav-link" href="/scaffolding-and-reuse.html"><span class="nav-num">15</span>Scaffolding Is a Reading Exercise</a>
+    <a class="nav-link" href="/building-with-ask.html"><span class="nav-num">13</span>Building With Ask</a>
+    <a class="nav-link" href="/codebase-map-for-agents.html"><span class="nav-num">14</span>Give Your AI Assistant a Map, Not a Flashlight</a>
+    <a class="nav-link" href="/mcp-gateway.html"><span class="nav-num">15</span>MCP as a Primitive: One Endpoint for Every Agent</a>
+    <a class="nav-link active" href="/agent-orchestration.html"><span class="nav-num">16</span>How a Request Is Built</a>
+    <a class="nav-link" href="/how-work-is-checked.html"><span class="nav-num">17</span>How Work Is Checked</a>
+    <a class="nav-link" href="/pipelines.html"><span class="nav-num">18</span>Pipelines: Automation That Ships With the App</a>
+    <a class="nav-link" href="/scaffolding-and-reuse.html"><span class="nav-num">19</span>Scaffolding Is a Reading Exercise</a>
     <div class="nav-heading">Operations</div>
-    <a class="nav-link" href="/data-integration.html"><span class="nav-num">16</span>Five Ways Data Crosses the Boundary</a>
-    <a class="nav-link" href="/connections-and-broker-keys.html"><span class="nav-num">17</span>Third-Party Credentials Without Sprawl</a>
-    <a class="nav-link" href="/caching-by-default.html"><span class="nav-num">18</span>Caching You Don&#x27;t Have to Think About</a>
-    <a class="nav-link" href="/feature-flags-and-sidecars.html"><span class="nav-num">19</span>Growing Without Bloating the Core</a>
-    <a class="nav-link" href="/production-checklist.html"><span class="nav-num">20</span>From Localhost to Production: The Honest Checklist</a>
+    <a class="nav-link" href="/data-integration.html"><span class="nav-num">20</span>Five Ways Data Crosses the Boundary</a>
+    <a class="nav-link" href="/connections-and-broker-keys.html"><span class="nav-num">21</span>Third-Party Credentials Without Sprawl</a>
+    <a class="nav-link" href="/connected-services.html"><span class="nav-num">22</span>Connected Services</a>
+    <a class="nav-link" href="/caching-by-default.html"><span class="nav-num">23</span>Caching You Don&#x27;t Have to Think About</a>
+    <a class="nav-link" href="/feature-flags-and-sidecars.html"><span class="nav-num">24</span>Growing Without Bloating the Core</a>
+    <a class="nav-link" href="/production-checklist.html"><span class="nav-num">25</span>From Localhost to Production: The Honest Checklist</a>
   </nav>
   <div class="sidebar-foot">
     Written against the Tiknix source. <a href="/index.html">All articles</a>
@@ -58,7 +63,7 @@
     <button class="btn-icon menu-toggle" id="menuToggle" type="button" aria-label="Open menu">&#9776;</button>
     <div class="topbar-title">
       <span class="eyebrow">Building with AI</span>
-      <strong>Plan With the Expensive Model, Execute With the Cheap One</strong>
+      <strong>How a Request Is Built</strong>
     </div>
     <div class="topbar-actions">
       <button class="btn-icon" id="themeToggle" type="button" aria-label="Toggle theme"><span id="themeIcon">&#9728;</span></button>
@@ -69,181 +74,171 @@
       <header class="article-header">
         <div class="meta">
           <span class="chip chip-ai">Building with AI</span>
-          <span class="eyebrow">Article 13 of 20</span>
+          <span class="eyebrow">Article 16 of 25</span>
           <span class="eyebrow">11 min read</span>
         </div>
-        <h1>Plan With the Expensive Model, Execute With the Cheap One</h1>
-        <p class="lede">The planner/worker/auditor pipeline: who is allowed to make design decisions, who merges, and why concurrency stays at three.</p>
+        <h1>How a Request Is Built</h1>
+        <p class="lede">One request from plan to live: who makes design decisions, how tasks are ranked, built side by side, read twice or built twice, and merged.</p>
       </header>
       <div class="article-body">
 <p>
-  Once you have more than one agent working on a codebase, you have an organizational problem, not
-  a prompting problem. Who decides the design? Who is allowed to touch main? What happens when two
-  workers edit the same file? Who reviews, and does it mean anything if the reviewer is the same
-  model that wrote the code?
+  Once more than one agent works on a codebase, you have an organisational problem, not a
+  prompting problem. Who decides the design? Who may change the live app? What happens when two
+  agents edit the same file? Who reviews, and does it mean anything when the reviewer is the model
+  that wrote the code? And when do you stop spending?
 </p>
 <p>
-  Tiknix answers these explicitly in <code>AGENT_ORCHESTRATION.md</code>, and the answers are
-  deliberately scaled to reality: a handful of subtasks per plan, three concurrent workers, one
-  instance. Not a thousand-agent swarm. The rules below are worth reading even if you never run the
-  pipeline, because they generalize.
+  Tiknix answers each of these in code rather than in a prompt. This article follows one request
+  — typed in <a href="/building-with-ask.html">Ask</a> — from plan to live, and names the rule
+  that holds at each step.
 </p>
 
-<h2>The pipeline</h2>
+<h2>Where the work happens</h2>
 <p>
-  Three stages, three distinct roles: <code>PlanRunner</code> → <code>PlanExecutor</code> →
-  <code>AuditRunner</code>.
+  Every project runs in its own container, and the checkout in that container <em>is</em> the
+  running app. There is no staging copy to promote: a task is built on its own git branch, in its
+  own worktree, and merging it is publishing it. That makes the merge the one gate that matters,
+  so everything below is about what a task must prove before it reaches it.
 </p>
 
-<h3>1. The planner owns design. Full stop.</h3>
+<h2>1. The planner owns the design</h2>
 <p>
-  The planner is the <em>only</em> agent permitted to make architectural decisions. It runs on a
-  frontier model, it is grounded on the reuse inventory (see
-  <a href="/codebase-map-for-agents.html">Give Your AI Assistant a Map</a>), and it must classify
-  every capability as REUSE, EXTEND, or NEW before proposing any work.
+  The planner is the only agent that makes architectural decisions. It reads the app first —
+  through the app's own MCP tools and the project's notebook — and must classify every capability
+  as <strong>REUSE</strong>, <strong>EXTEND</strong> or <strong>NEW</strong> before proposing work.
+  Its plan is a graph of tasks, each carrying:
 </p>
-<p>It then decomposes the work into subtasks, each carrying:</p>
 <ul>
   <li><code>files</code> — what it will touch</li>
   <li><code>reuses</code> — which existing primitives it builds on</li>
-  <li><code>depends_on</code> — which subtasks must land first</li>
-  <li><code>engine</code> — which agent should execute it</li>
+  <li><code>depends_on</code> — which tasks must land first (tasks that touch the same files are
+    chained, so two agents never edit one file at once)</li>
+  <li><code>verify</code> — the checks that prove it, quoted from the request's "how we will know
+    it worked"</li>
+  <li><code>effort</code> and <code>risk</code>, each 1 to 5</li>
 </ul>
-
-<h3>2. Workers implement the spec. They do not redesign it.</h3>
-<blockquote>
-  A subtask description is a spec, not a suggestion. Workers implement it; they do not re-decide
-  architecture. If a worker finds the spec wrong, it <strong>stops and reports</strong> — it does
-  not redesign.
-</blockquote>
 <p>
-  This constraint is the load-bearing one. A worker that improvises produces code that is locally
-  reasonable and globally incoherent — three subtasks each solving the same problem three
-  compatible-looking, incompatible ways. Stopping and reporting is cheap; silent divergence is
-  expensive and invisible until integration.
-</p>
-<p>The corollary is a diagnostic rule most teams could adopt directly:</p>
-<blockquote>
-  Spec clarity is the bottleneck, not execution. A subtask a cheap model can't execute without a
-  judgement call is an under-specified subtask — fix the <em>plan</em>, not the worker.
-</blockquote>
-<p>
-  That reframes worker failure as a planning defect. It is usually true, and it points the fix at
-  the place that also improves the next twenty tasks.
+  A task the planner marks complex gets a second pass that investigates and splits it before
+  anything is built; a last pass checks the graph as a whole — no cycles, foundations first, every
+  route with its permission level.
 </p>
 
-<h3>3. The auditor reviews with a different model. Deliberately.</h3>
+<h2>2. Every task is ranked</h2>
 <p>
-  <code>AuditRunner</code> drives the running site with Playwright as ROOT, ADMIN, and MEMBER,
-  captures screenshots, and writes <code>audit.json</code>. And it carries a hard rule:
-</p>
-<blockquote>
-  The review model MUST differ from the worker model. Same-model review catches correlated errors
-  poorly.
-</blockquote>
-<p>
-  This is the single most transferable idea in the document. A model reviewing its own output
-  shares its blind spots — it will confidently approve the specific mistakes it is prone to making.
-  Decorrelation is what makes review informative rather than ceremonial. The minimum is a different
-  tier (workers on a mid model, auditor on a frontier one); the ideal is a different engine
-  entirely.
+  <code>PlanRank</code> turns the planner's scores into something a person can read at a glance —
+  <em>Minor, Low, Medium, High, Critical</em> — and raises a task's risk on evidence the planner may
+  have missed: it touches sign-in, permissions or who sees what; another task changes the same
+  file. The rank decides how hard a task is checked, which is the point: a typo fix and a change to
+  who may see invoices should not get the same scrutiny.
 </p>
 
-<h2>Frontier plans, cheap executes</h2>
+<h2>3. Tasks build side by side, by level</h2>
 <p>
-  The cost model is explicit and, in the codebase's own framing, borrowed from measurements rather
-  than intuition: roughly 8× cost difference at equal quality between running everything on a
-  frontier model and splitting planning from execution.
+  Tasks with nothing between them build at once; a task starts when what it depends on has been
+  merged. How many run at once is a setting on the project's agent (<em>at once</em>, under its
+  Limits) — some providers serve one request at a time, and the setting says so rather than letting
+  the build find out by failing.
 </p>
-<p>
-  So Tiknix tiers per engine — <code>planner_model</code>, <code>worker_model</code>,
-  <code>auditor_model</code>, <code>resolver_model</code> — declared in a registry
-  (<code>conf/aibuilder.ini</code> + <code>lib/EngineRegistry.php</code>) rather than hardcoded.
-  Planning defaults to a frontier tier but is <em>selectable</em>. Mechanical edits go to cheaper
-  engines. Members can override tiers for their own runs.
-</p>
-<p>The escalation rule is bounded:</p>
-<blockquote>
-  A task that fails auto-retry on a cheap engine may be re-queued <strong>once</strong> on a higher
-  tier before it is marked failed.
-</blockquote>
-<p>
-  One retry at a higher tier. Not infinite escalation — that is how a cost lever quietly becomes a
-  cost sink.
-</p>
-
-<h2>Coordination beats throughput</h2>
-<p>
-  Concurrency is capped at three. Not because more is technically impossible, but because merge
-  quality degrades faster than throughput improves. The supporting rules:
-</p>
+<p>Each task gets a sandbox, not a description of one:</p>
 <ul>
-  <li><strong>Workers never run git.</strong> The orchestrator commits and merges. One writer to history.</li>
-  <li><strong>File-overlapping tasks must be chained</strong> via <code>depends_on</code>. Two agents editing one file concurrently is a conflict you chose to create.</li>
-  <li><strong>The megafile rule:</strong> the planner flags any task touching a file over ~2k lines and either splits the work or serializes every task that touches it.</li>
-  <li><strong>Only the plan may declare intentional breakage</strong> — "this task breaks X until task Y lands" is a planning decision recorded in the task, never a worker's improvisation.</li>
+  <li>its own copy of the app's database and config, served by its own PHP server;</li>
+  <li>three people already signed in — a member, an admin, a root — one cookie jar each;</li>
+  <li>the app's tests run before it starts, so what was already failing is not blamed on it;</li>
+  <li>a browser, lent from the platform's QA host, that can open the sandbox's address;</li>
+  <li>no connections: a sandbox cannot send mail or charge a card.</li>
 </ul>
 
-<h2>Conflicts go to a neutral third party</h2>
-<p>
-  When branches do collide, neither author resolves it. A fresh agent — new session, no history
-  with either side, running on a different model tier — gets a resolution-only brief: keep both
-  intents, commit the merge, change nothing else.
-</p>
-<p>
-  The reasoning is the same as the review rule. An author resolving a conflict against their own
-  branch is not a neutral party; they will preserve their intent and quietly discard the other.
-</p>
-
-<h2>What they deliberately did not build</h2>
-<p>This section of the document may be the most valuable, because restraint rarely gets written down:</p>
-<ul>
-  <li>
-    <strong>No custom version control.</strong> Systems built for hundred-agent swarms solve a
-    problem that does not exist at three concurrent workers. Git worktrees plus orchestrator merges
-    are correct at this scale — building beyond that is named as an over-engineering trap, to
-    revisit only if concurrency grows tenfold.
-  </li>
-  <li>
-    <strong>No planner hierarchy.</strong> Planners spawning planners is the wrong depth for a
-    handful of subtasks. One planner per plan.
-  </li>
-</ul>
-<p>
-  Knowing which sophisticated thing <em>not</em> to build is a design skill. Both decisions are
-  recorded with the condition that would reverse them, which is what makes them decisions rather
-  than assumptions.
-</p>
-
-<h2>Run N+1 learns from run N</h2>
+<h2>4. Workers implement the spec; they do not redesign it</h2>
 <blockquote>
-  Codify surprises: when an audit failure or a repeated auto-retry reveals a convention gap, the
-  fix lands in CLAUDE.md or the brief builders — <strong>not</strong> in a one-off prompt.
+  A task description is a spec, not a suggestion. If a worker finds the spec wrong, it stops and
+  asks — the question reaches its person in Ask and by email — rather than re-deciding the design.
 </blockquote>
 <p>
-  Every agent gets the same field guide: the project conventions, the MCP reuse tools, and a
-  deterministic expansion of the planner's <code>reuses</code> into exact routes, columns, and
-  method names. When something goes wrong, the correction goes into the guide, so it applies to
-  every future run rather than to one conversation that ends.
+  A worker that improvises produces code that is locally reasonable and globally incoherent:
+  three tasks solving the same problem three compatible-looking, incompatible ways. Stopping is
+  cheap; silent divergence is invisible until it breaks. The corollary still holds: a task a model
+  cannot carry out without a judgement call is an under-specified task. Fix the plan, not the
+  worker.
+</p>
+
+<h2>5. Before the merge: what the task must show</h2>
+<p>When the agent finishes, the platform — not the agent — decides whether its work is merged:</p>
+<ul>
+  <li>every page it changed is requested again as a visitor and as each of the three people; a
+    PHP file left empty or unparsable, or a browser installed in the app, fails it outright;</li>
+  <li>the app's tests run again; what newly fails is written on the task;</li>
+  <li>a task that changed what a person sees, while a browser was lent, is not merged until that
+    browser opened each changed page — the sandbox records who asked for what, so a
+    <code>curl</code> does not count;</li>
+  <li>a runtime file copied over by hand, or a seed in a folder nothing applies, is refused with
+    the fix named.</li>
+</ul>
+<p>
+  The work is committed as the member who asked for it, and merged by the orchestrator: one writer
+  to the app's history.
+</p>
+
+<h2>6. Risky tasks are read twice; critical ones are built twice</h2>
+<p>
+  A task ranked Medium or above gets a <strong>second reading</strong>: the project's agent, with no
+  write access, reads what the task changed against its checks and answers PASS or names the
+  problems. Problems become one fix task — <em>Fix what the review of #N found</em> — in the same request.
 </p>
 <p>
-  That is the difference between prompting and engineering. A one-off prompt fix helps the current
-  task. A guide fix compounds.
+  A <strong>Critical</strong> task with real effort (risk 5, effort 3 or more) is built twice, by two
+  agents at once, the second told to take a different approach where there is one. Both finish;
+  a judge picks one to keep <em>whole</em> — two answers to one question are never merged into
+  each other. What the other attempt is still good for is its tests: they are run against the
+  kept one, and any that fail become a fix task. A race only starts when two attempts fit within
+  what is left of the request's spending limit.
+</p>
+
+<h2>7. The project learns its own costs</h2>
+<p>
+  Every task records what it took — time, tokens, turns, which model. <code>PlanLearn</code> turns
+  that into medians per effort level and trouble rates per risk level, for this project, and puts
+  them in front of the next planner (how long, and how many tokens, a task of each effort has taken here). Ask shows a
+  request's floor — the least its longest chain of tasks has taken here — and the spending check
+  before a build uses the same record.
+</p>
+
+<h2>8. After the merge</h2>
+<p>
+  Merged tasks run their seeds in the live app, then the whole request is checked from outside in
+  a browser (see <a href="/how-work-is-checked.html">How Work Is Checked</a>). Each task may propose
+  up to six lines for the project's notebook — a decision and its reason, where something
+  non-obvious lives, a mistake and its fix — added after it merges, so the next run does not
+  rediscover them. Tasks never edit the notebook themselves: they run side by side and would
+  collide.
+</p>
+
+<h2>Retries are bounded</h2>
+<p>
+  A task that fails is retried automatically only for failures a retry can fix — a session that did
+  not start, a page check it can satisfy in its kept copy — at most three times, and never again
+  when the same failure repeats. Infinite retries are how a safety net becomes a cost sink.
 </p>
 
 <div class="callout callout-honest">
   <span class="callout-title">Honest notes</span>
   <ul>
-    <li><strong>Not every engine runs natively yet.</strong> The registry lets the planner assign any engine per task, but an engine without a proven headless launcher falls back to the default and logs a warning. The status section of <code>AGENT_ORCHESTRATION.md</code> says so plainly — the field is "best-effort real," and the log reports the engine actually used, not the one requested.</li>
-    <li><strong>Review lenses are partly aspirational.</strong> The output-only Playwright lens is built. The codebase-diff lens and the transcript lens are planned. Treat the audit as one meaningful signal, not as full coverage.</li>
-    <li><strong>Decorrelation by model tier is weaker than by engine.</strong> Two tiers of the same model family share more blind spots than two different families do. The document acknowledges this and calls tier separation "the honest decorrelation lever" available today.</li>
-    <li><strong>This is orchestration, not autonomy.</strong> A human sets the goal, reviews the plan, and merges. It is a way to run a small, well-supervised team of agents — not a system you point at a backlog and walk away from.</li>
-    <li><strong>Three concurrent workers is a real ceiling.</strong> If your instinct is "why not thirty," read the restraint section again. The cap is a quality decision, and raising it means building merge infrastructure you do not currently need.</li>
+    <li><strong>The second reading uses the same model by default.</strong> Review by a different
+      model family catches more of the mistakes a model is prone to; today the reviewer is the
+      project's own agent. It still finds real problems — a pass with no write access, against
+      stated checks, is not the same as writing — but it is not decorrelated review.</li>
+    <li><strong>Races are rare by design.</strong> Few tasks are Critical with real effort, and a
+      race doubles that task's cost. Expect a handful a month on a busy project, not one per
+      request.</li>
+    <li><strong>A request's time is mostly between tasks.</strong> A task's own checks add seconds;
+      waiting for the level before it, for a free slot, or for a review is where the minutes go.</li>
+    <li><strong>This is supervised, not autonomous.</strong> A person sets the goal, answers the
+      questions, and approves the plan. The machinery makes a small team of agents safe to leave
+      running; it does not decide what to build.</li>
   </ul>
 </div>
       </div>
       <nav class="article-nav">
-        <a class="prev" href="/mcp-gateway.html"><span class="dir">&#8592; Previous</span><span class="ttl">MCP as a Primitive: One Endpoint for Every Agent</span></a><a class="next" href="/pipelines.html"><span class="dir">Next &#8594;</span><span class="ttl">Pipelines: Automation That Ships With the App</span></a>
+        <a class="prev" href="/mcp-gateway.html"><span class="dir">&#8592; Previous</span><span class="ttl">MCP as a Primitive: One Endpoint for Every Agent</span></a><a class="next" href="/how-work-is-checked.html"><span class="dir">Next &#8594;</span><span class="ttl">How Work Is Checked</span></a>
       </nav>
     </article>
   </main>

@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pages as Data — Tiknix Docs</title>
+<meta name="description" content="A page says what is on it — its title, its one action, its rows and fields — and Ui decides how it looks, so every page of an app reads the same way.">
+<link rel="icon" href="/img/tiknix.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Figtree:ital,wght@0,300..900;1,300..900&family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,100..900,0..100&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/docs.css">
+<script src="/assets/docs.js"></script>
+</head>
+<body>
+<div class="shell">
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+<aside class="sidebar" id="sidebar">
+  <a class="sidebar-brand" href="/index.html">
+    <span class="brand-logo"></span>
+    <span class="brand-word">tiknix</span>
+    <span class="brand-sub">docs</span>
+  </a>
+  <nav class="nav">
+    <div class="nav-heading">Index</div>
+    <a class="nav-link" href="/index.html"><span class="nav-num">&#9737;</span>All articles</a>
+    <div class="nav-heading">Foundations</div>
+    <a class="nav-link" href="/build-on-primitives.html"><span class="nav-num">01</span>Start From Primitives, Not From Scratch</a>
+    <a class="nav-link" href="/runtime-and-your-app.html"><span class="nav-num">02</span>The Runtime and Your App</a>
+    <a class="nav-link" href="/php-sqlite-substrate.html"><span class="nav-num">03</span>Why PHP and SQLite Are a Serious Choice in 2026</a>
+    <a class="nav-link" href="/membership-and-settings.html"><span class="nav-num">04</span>The Members Table Is the Spine</a>
+    <a class="nav-link" href="/convention-routing.html"><span class="nav-num">05</span>Convention-Based Routing: A URL Is a Method Name</a>
+    <a class="nav-link" href="/data-without-migrations.html"><span class="nav-num">06</span>Modeling Data Without a Migration Backlog</a>
+    <a class="nav-link" href="/bootstrap-design-primitive.html"><span class="nav-num">07</span>Bootstrap as a Design Primitive</a>
+    <a class="nav-link active" href="/pages-as-data.html"><span class="nav-num">08</span>Pages as Data</a>
+    <div class="nav-heading">Security &amp; Access</div>
+    <a class="nav-link" href="/authentication-included.html"><span class="nav-num">09</span>The Login You Don&#x27;t Have to Write</a>
+    <a class="nav-link" href="/two-factor-included.html"><span class="nav-num">10</span>Two-Factor Authentication as a Config Switch</a>
+    <a class="nav-link" href="/permissions-as-data.html"><span class="nav-num">11</span>Permissions as Data, Not If-Statements</a>
+    <a class="nav-link" href="/teams-and-ownership.html"><span class="nav-num">12</span>Teams, Ownership, and Sharing Work Safely</a>
+    <div class="nav-heading">Building with AI</div>
+    <a class="nav-link" href="/building-with-ask.html"><span class="nav-num">13</span>Building With Ask</a>
+    <a class="nav-link" href="/codebase-map-for-agents.html"><span class="nav-num">14</span>Give Your AI Assistant a Map, Not a Flashlight</a>
+    <a class="nav-link" href="/mcp-gateway.html"><span class="nav-num">15</span>MCP as a Primitive: One Endpoint for Every Agent</a>
+    <a class="nav-link" href="/agent-orchestration.html"><span class="nav-num">16</span>How a Request Is Built</a>
+    <a class="nav-link" href="/how-work-is-checked.html"><span class="nav-num">17</span>How Work Is Checked</a>
+    <a class="nav-link" href="/pipelines.html"><span class="nav-num">18</span>Pipelines: Automation That Ships With the App</a>
+    <a class="nav-link" href="/scaffolding-and-reuse.html"><span class="nav-num">19</span>Scaffolding Is a Reading Exercise</a>
+    <div class="nav-heading">Operations</div>
+    <a class="nav-link" href="/data-integration.html"><span class="nav-num">20</span>Five Ways Data Crosses the Boundary</a>
+    <a class="nav-link" href="/connections-and-broker-keys.html"><span class="nav-num">21</span>Third-Party Credentials Without Sprawl</a>
+    <a class="nav-link" href="/connected-services.html"><span class="nav-num">22</span>Connected Services</a>
+    <a class="nav-link" href="/caching-by-default.html"><span class="nav-num">23</span>Caching You Don&#x27;t Have to Think About</a>
+    <a class="nav-link" href="/feature-flags-and-sidecars.html"><span class="nav-num">24</span>Growing Without Bloating the Core</a>
+    <a class="nav-link" href="/production-checklist.html"><span class="nav-num">25</span>From Localhost to Production: The Honest Checklist</a>
+  </nav>
+  <div class="sidebar-foot">
+    Written against the Tiknix source. <a href="/index.html">All articles</a>
+  </div>
+</aside>
+<div class="main">
+  <header class="topbar">
+    <button class="btn-icon menu-toggle" id="menuToggle" type="button" aria-label="Open menu">&#9776;</button>
+    <div class="topbar-title">
+      <span class="eyebrow">Foundations</span>
+      <strong>Pages as Data</strong>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-icon" id="themeToggle" type="button" aria-label="Toggle theme"><span id="themeIcon">&#9728;</span></button>
+    </div>
+  </header>
+  <main class="content">
+    <article class="narrow">
+      <header class="article-header">
+        <div class="meta">
+          <span class="chip chip-foundations">Foundations</span>
+          <span class="eyebrow">Article 08 of 25</span>
+          <span class="eyebrow">8 min read</span>
+        </div>
+        <h1>Pages as Data</h1>
+        <p class="lede">A page says what is on it — its title, its one action, its rows and fields — and Ui decides how it looks, so every page of an app reads the same way.</p>
+      </header>
+      <div class="article-body">
+<p>
+  Ask an AI agent for an admin page and you will get one. It will have a card, a table, a form,
+  three buttons in a row and a success message in green — and the next page it writes will have a
+  slightly different card, a table that scrolls sideways on a phone, and four buttons. Each page is
+  fine. The app is not: nothing reads the same way twice, and the person using it has to work out
+  each screen from scratch.
+</p>
+<p>
+  Tiknix's answer is to take layout away from the page. A page of the app's own says
+  <em>what is on it</em> — its title, the one thing to do there, the rows, the fields — as data, and
+  <code>\app\Ui</code> decides how that looks: spacing, hierarchy, where actions sit, how a list reads
+  on a phone, how a delete is confirmed.
+</p>
+
+<h2>What a page says</h2>
+<pre><code>&lt;?= \app\Ui::page(['title' =&gt; 'Customers', 'lead' =&gt; 'Everyone who has ordered.',
+                   'primary' =&gt; ['label' =&gt; 'Add a customer', 'url' =&gt; '/cafe/customer', 'icon' =&gt; 'plus-lg']]) ?&gt;
+&lt;?= \app\Ui::table(['rows' =&gt; $rows, 'count' =&gt; 'customer',
+    'columns' =&gt; [['label' =&gt; 'Customer', 'value' =&gt; 'name', 'sub' =&gt; 'email', 'url' =&gt; fn($r) =&gt; '/cafe/customer?id=' . $r-&gt;id],
+                  ['label' =&gt; 'Status', 'value' =&gt; 'status', 'as' =&gt; 'badge', 'tones' =&gt; ['active' =&gt; 'success']],
+                  ['label' =&gt; 'Since', 'value' =&gt; 'created_at', 'as' =&gt; 'date', 'quiet' =&gt; true]],
+    'actions' =&gt; fn($r) =&gt; [['label' =&gt; 'Delete', 'post' =&gt; '/cafe/delete', 'fields' =&gt; ['id' =&gt; $r-&gt;id],
+                             'confirm' =&gt; "Delete {$r-&gt;name}? Their orders stay.", 'danger' =&gt; true]],
+    'empty' =&gt; ['title' =&gt; 'No customers yet', 'text' =&gt; 'They appear here after their first order.',
+                'action' =&gt; ['label' =&gt; 'Add a customer', 'url' =&gt; '/cafe/customer']]]) ?&gt;</code></pre>
+<p>
+  There is no <code>&lt;div class="container"&gt;</code>, no card, no hand-written table and no
+  <code>confirm()</code>. The same few calls cover most of an app: <code>Ui::page</code>,
+  <code>Ui::table</code>, <code>Ui::form</code>, <code>Ui::agenda</code> (things that happen at a
+  time), <code>Ui::detail</code> (one record's facts) and <code>Ui::notice</code>.
+</p>
+
+<h2>The rules it holds you to</h2>
+<p>Each is about what a person has to read and decide, not about taste:</p>
+<ul>
+  <li><strong>One primary action per page</strong>, named as a verb with its object — "Add a
+    customer", never "Submit" or "New". Others go in a quieter menu.</li>
+  <li><strong>A list shows what tells rows apart</strong> — at most seven columns. The first names
+    the row and links to it; a second fact goes under it; columns a phone can drop are marked
+    <code>quiet</code>.</li>
+  <li><strong>Things that happen at a time are an agenda, not a table</strong> — grouped by day,
+    Today and Tomorrow in words, soonest first. A date column makes the reader do the grouping.</li>
+  <li><strong>Every list has an empty state</strong> that says what belongs there and how to add
+    the first one.</li>
+  <li><strong>A form asks only what it needs now.</strong> More than eight fields in one run is
+    refused: group them in sections, or fold the rarely-needed ones under "More options". Two to
+    four choices are radio buttons, not a dropdown.</li>
+  <li><strong>Words are the user's, not the schema's</strong> — "Stop showing it at", not
+    <code>expires_at</code>.</li>
+  <li><strong>Something destructive is a POST with a confirmation that says what will be
+    lost.</strong></li>
+</ul>
+<p>
+  A spec that breaks a rule is refused with the fix in the message — an unknown key, a form with
+  ten loose fields, a table with no empty state. That is deliberate: a page that renders wrong
+  quietly is worse than one that refuses loudly, because the loud one gets fixed in the task that
+  wrote it.
+</p>
+
+<h2>Which pages, before any view</h2>
+<p>
+  The harder decision is not how a page looks but which pages a feature needs. The
+  <code>ui_pattern</code> MCP tool answers it from the shape of the data: given a bean (or the
+  columns of one not built yet), it says whether this is a list and a form, a page per record, an
+  agenda by day, a conversation, a single settings form, or a list on its parent's page — which
+  columns tell rows apart, what the form asks up front and what folds away, and the
+  <code>Ui</code> code to start from. The planner calls it before it plans a page.
+</p>
+
+<h2>Hand-made pages still exist</h2>
+<p>
+  A calendar, a chat, a dashboard or a public landing page is not a list, a form or a record, and
+  is written by hand — on the design system's classes and Bootstrap 5.3 (see
+  <a href="/bootstrap-design-primitive.html">Bootstrap as a Design Primitive</a>), still opening with
+  <code>Ui::page()</code>. It says so in one line, <code>// ui: hand-made — a calendar</code>, and the
+  page check stops asking it to be a table.
+</p>
+
+<h2>The check, and the order of work</h2>
+<p>
+  <code>full_validation</code> reports what a view does by hand that <code>Ui</code> decides — a
+  hand-written table or form, two primary buttons, its own flash output, a hard-coded colour, no
+  heading — as warnings on the task that wrote it.
+</p>
+<p>
+  And it fixes the order of work. A feature's first task is its data, rules and routes, with pages
+  built from <code>Ui</code>: correct and usable, and done. How it <em>feels</em> — the order of
+  things, the wording, what is folded away — is its own design task, after the data works, made by
+  looking at the pages in a browser at phone and desktop width.
+</p>
+
+<div class="callout callout-honest">
+  <span class="callout-title">Honest notes</span>
+  <ul>
+    <li><strong>Refusals are 500s.</strong> A spec <code>Ui</code> refuses throws, and in a live page
+      that is an error page until the view is fixed. The page check after every task exists so a
+      refusal is caught in the sandbox, not by a visitor.</li>
+    <li><strong>It is opinionated on purpose.</strong> Seven columns, eight loose fields, one primary
+      button: some pages will want one more. The rule is the default an agent cannot argue its way
+      past, not a law of nature — sections, folded fields and a page per record are the ways
+      through.</li>
+    <li><strong>Every app looks related.</strong> That is the point for the people using it, and a
+      cost for an owner who wants their app to look unlike the others. The palette, type and logo
+      are still theirs.</li>
+  </ul>
+</div>
+      </div>
+      <nav class="article-nav">
+        <a class="prev" href="/bootstrap-design-primitive.html"><span class="dir">&#8592; Previous</span><span class="ttl">Bootstrap as a Design Primitive</span></a><a class="next" href="/authentication-included.html"><span class="dir">Next &#8594;</span><span class="ttl">The Login You Don&#x27;t Have to Write</span></a>
+      </nav>
+    </article>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="brand-logo footer-logo"></span>
+        <div>
+          <div class="footer-word">tiknix</div>
+          <div class="footer-tag">Build on primitives that already work</div>
+        </div>
+      </div>
+      <nav class="footer-links">
+        <a href="https://tiknix.com">Homepage</a>
+        <a href="https://github.com/mfrederico/tiknix">GitHub</a>
+        <a href="https://github.com/mfrederico/tiknix-tutorials">Tutorials</a>
+        <a href="/index.html">All articles</a>
+      </nav>
+    </div>
+    <div class="footer-fine">
+      Documentation written against the Tiknix source. Tiknix is released under the MIT License.
+    </div>
+  </footer>
+</div>
+</div>
+</body>
+</html>

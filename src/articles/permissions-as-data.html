@@ -83,26 +83,39 @@ if (Flight::hasLevel(LEVELS['ADMIN'])) {
   Ownership</a>).
 </p>
 
-<h2>Build mode: permissions that write themselves</h2>
+<h2>Build mode: a missing row fails closed</h2>
 <pre><code>[app]
 build_mode = true</code></pre>
 <p>
-  With build mode on, hitting a route that has no permission row creates one automatically and
-  allows the request. You develop by using the app; the permission rows accumulate behind you. At
-  the end you review the table, tighten the levels that should be tighter, and turn build mode off.
+  With build mode on — and it is on in every Tiknix app — the first request to a route that has no
+  permission row creates one, at <strong>admin only</strong> (a short list of pages that must be
+  public, like the home page and setup, excepted), and that request is judged by the row it just
+  made. A forgotten row therefore locks a page rather than opening it, and leaves a marked row
+  behind ("Auto-generated permission for …") to be decided.
 </p>
 <p>
-  This is a very good fit for AI-assisted development. An agent that adds a controller does not
-  need to remember a second, easily-forgotten step in a different subsystem — it writes the method,
-  the route works, and the row exists to be reviewed. The review is the human's job, and it happens
-  against a concrete list rather than an imagined one.
+  The real rows ship as seeds, and the order matters: seed a route's row <em>before</em> it is ever
+  requested, with <code>PermissionCache::seedRule()</code>.
+</p>
+<pre><code>echo \app\PermissionCache::seedRule('cafe', '*', 100, 'Cafe pages (members)');   // added | corrected | kept | unchanged</code></pre>
+<p>
+  <code>seedRule()</code> recognises a row build mode made and corrects it to the seed's level; a row
+  a person set is <code>kept</code>. A wildcard also clears the automatic
+  <code>cafe::&lt;method&gt;</code> rows that would shadow it. A hand-written "insert if missing" seed
+  does neither — it would leave the admin-only row in place forever.
+</p>
+<p>
+  This is a good fit for AI-assisted development. An agent that adds a controller and forgets the
+  seed produces a page that is locked, not one that is open to the internet — and the page check
+  after its task says so.
 </p>
 <div class="callout callout-tip">
   <span class="callout-title">The one rule</span>
   <p>
-    Build mode must be <strong>off</strong> in production. On, it grants access to any URL that
-    lacks a rule — the exact opposite of what you want facing the internet. It is a development
-    accelerator, not a deployment setting.
+    Leave build mode <strong>on</strong>. With it off, a route that has no row falls through to
+    <em>public</em> access — the opposite of what you want facing the internet. (Earlier versions
+    of Tiknix had build mode allow the request, and said to turn it off in production. Both have
+    changed.)
   </p>
 </div>
 
@@ -131,7 +144,7 @@ build_mode = true</code></pre>
 <div class="callout callout-honest">
   <span class="callout-title">Honest notes</span>
   <ul>
-    <li><strong>Unknown routes default to PUBLIC.</strong> With build mode off and no matching row, the check falls through to public access. This is the single most important thing to know about the system: <em>a missing row is not a locked door.</em> Audit <code>authcontrol</code> before you deploy and add explicit wildcards for every controller.</li>
+    <li><strong>With build mode off, unknown routes default to PUBLIC.</strong> With no matching row, the check falls through to public access. This is the single most important thing to know about the system: <em>a missing row is not a locked door.</em> Audit <code>authcontrol</code> before you deploy and add explicit wildcards for every controller.</li>
     <li><strong>Levels are linear, not a role graph.</strong> A single ordered scale cannot express "billing can see invoices but not users, support can see users but not invoices." For orthogonal permissions you need a second mechanism — feature flags, team roles, or per-record checks in code.</li>
     <li><strong>Wildcards are blunt.</strong> <code>admin::*</code> at level 50 covers every method you add later, including the one you meant to restrict further. Convenient and quietly permissive — re-read your wildcards when you add sensitive methods.</li>
     <li><strong>The session caches the level.</strong> Demoting a user does not necessarily end their current session's privileges. If immediate revocation matters, re-read the member or invalidate the session.</li>

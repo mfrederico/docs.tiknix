@@ -1,0 +1,108 @@
+<p>
+  Most AI coding tools start from a chat box and end at a diff. You type, a model writes code, and
+  then the real work begins: you read it, run it, find what it broke, and ask again. The model was
+  fast; the loop around it was you.
+</p>
+<p>
+  Tiknix puts the loop in the product. You say what you want in the <strong>Ask</strong> view of
+  the Builder, in your own words, and what comes back is not a diff but a request that is planned,
+  built, checked and put live — with every step visible in the same conversation, and the places
+  where it needs you marked in yellow.
+</p>
+
+<h2>Three steps to the first build</h2>
+<ol>
+  <li><strong>Create a project.</strong> Give it a name. It gets its own container on the
+    platform — its own copy of the runtime, its own database, its own address — ready in a few
+    minutes.</li>
+  <li><strong>Connect an agent.</strong> On the project's Agents page: sign in with Claude, add an
+    API key, or use a model of your own (any endpoint that speaks the Anthropic Messages API —
+    Ollama, OpenRouter, z.ai, a local server for root). The project builds with whichever agent it
+    is connected to; nothing in the platform is tied to one model.</li>
+  <li><strong>Ask for what you want.</strong> "A booking page for my classes." "Wholesale orders
+    should become invoices in QuickBooks." "The trips list shows 0 stops after I add one."</li>
+</ol>
+
+<h2>What one message becomes</h2>
+<p>
+  Ask first decides what kind of message it is, because not everything typed into a builder is a
+  request to build. A question about the app is answered from its code ("how does the reorder
+  level work?"). Something to do to the app's data — "record a delivery of 20 kg of flour" — is
+  written as an operation, shown to you in words with the code folded away, and run only when you
+  press <strong>Do it</strong>, after a restore point is taken. Only a change to the app becomes a
+  build.
+</p>
+<p>A build then goes down one road:</p>
+<ol>
+  <li><strong>The planner reads the app before it plans.</strong> It calls the app's own MCP tools —
+    <code>reuse_digest</code>, <code>describe</code>, <code>ui_pattern</code> — and the project's
+    notebook (what earlier runs recorded), so the plan names real files and extends what exists.
+    See <a href="/codebase-map-for-agents.html">Give Your AI Assistant a Map</a>.</li>
+  <li><strong>It asks before it guesses.</strong> When the request leaves a real decision open
+    ("should a cancelled order still count toward the supplier's shortfall?"), the planner stops and
+    asks. The question appears in Ask — and by email, where a reply answers it.</li>
+  <li><strong>You see the plan first.</strong> "Plan it first" is the default: the tasks, what each
+    will touch, and how risky each is, before anything is built. One press builds it.</li>
+  <li><strong>Tasks build side by side.</strong> Each in its own copy of the app with its own
+    database and server, merged when its checks pass. See
+    <a href="/agent-orchestration.html">How a Request Is Built</a>.</li>
+  <li><strong>The result is checked from outside.</strong> After the build, a browser signs in as
+    each kind of user and looks at what changed, at desktop and phone width. Its screenshots appear
+    under the request. See <a href="/how-work-is-checked.html">How Work Is Checked</a>.</li>
+</ol>
+
+<h2>Where it needs you</h2>
+<p>
+  The conversation is built so that the one thing waiting on you is obvious. Yellow means a
+  decision: a planner's question, a task's question, a data change waiting for <em>Do it</em>.
+  Everything else moves on by itself — a request made while another is building waits its turn and
+  starts when that one is in the app, so it plans against the code it will actually change. Until
+  it starts, you can edit what it says; the planner's questions and your answers stay with it.
+</p>
+<p>
+  Ask also guesses the next thing you are likely to want, from what was just built. The guess sits
+  in the input as grey text; <kbd>Tab</kbd> accepts it.
+</p>
+
+<h2>Problems Tiknix finds</h2>
+<p>
+  When the check after a build finds something wrong, or the live app logs a new error, it appears
+  in Ask as Tiknix speaking first: what is wrong, where it was seen, the screenshots. A
+  <strong>Fix it</strong> button turns it into a request written from the report itself. The
+  button then follows that fix — <em>Planning a fix…</em>, <em>Being fixed by request #N</em>, and
+  a green <strong>Fixed!</strong> linking to the request that fixed it. When several problems are
+  open, <strong>Fix all</strong> sends them as one request: the planner looks for what they share,
+  fixes each cause once, and says which were already fixed or are working as intended.
+</p>
+<p>
+  On every project, a failed check also starts its own fix — at most two rounds before it waits
+  for a person. You can turn that off per project.
+</p>
+
+<h2>Limits and undo</h2>
+<p>
+  Each agent has a <strong>spend per request</strong> (none, about 3M, 10M or 30M tokens). Before a
+  request starts, the Builder compares it with what tasks like it have cost in this project; if it
+  is likely to go over, it says so and waits for <em>Build anyway</em>. When a running request
+  reaches the limit, it pauses and emails you. Separately, the newest finished request has an
+  <strong>Undo</strong>: the app's code and data go back to before it, and how it was is kept, so
+  the undo can itself be undone.
+</p>
+
+<div class="callout callout-honest">
+  <span class="callout-title">Honest notes</span>
+  <ul>
+    <li><strong>It merges without a code review by you.</strong> Tiknix is built for owners who are
+      not engineers, so a request that passes its checks goes live. The checks, the reviewer on
+      risky tasks, and Undo are the safety net — not a human reading every line. If you want to read
+      every line, the code is a git repository and every change is a commit.</li>
+    <li><strong>"Fixed!" means the fixing request finished.</strong> When a fix decides one of the
+      problems was already fixed or is by design, that is said in the request, not yet on each
+      problem's own bubble.</li>
+    <li><strong>The quality of the answer still depends on the request.</strong> A sentence that
+      names who it is for and how you will know it worked plans better than three words. The
+      planner's questions cover the gaps it can see, not the ones it cannot.</li>
+    <li><strong>Planning takes minutes, not seconds.</strong> Reading the app first is the point;
+      it is also the slowest step for a small change.</li>
+  </ul>
+</div>

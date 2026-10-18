@@ -103,7 +103,7 @@ foreach (glob(__DIR__ . '/Steps/*Step.php') as $file) {
 <p>
   No registration list, no switch statement, no three places to update. Write
   <code>Steps/SlackStep.php</code>, implement the interface, and <code>slack</code> is a valid step
-  type everywhere — in the runner, in the editor, and in the component list agents read.
+  type everywhere — in the runner, on the Pipelines page, and in the component list agents read.
 </p>
 <p>
   The registry's docblock is candid about why it works this way: an earlier system had three
@@ -129,6 +129,26 @@ foreach (glob(__DIR__ . '/Steps/*Step.php') as $file) {
   That is a considerably better division of labor than "let the agent write the automation
   wherever." The format is small enough to validate, small enough for a human to read in thirty
   seconds, and versioned like everything else.
+</p>
+
+<h2>What starts a pipeline</h2>
+<ul>
+  <li><strong>A schedule</strong> — <code>"trigger": {"cron": "0 6 * * *"}</code>, below.</li>
+  <li><strong>A call</strong> — run by hand from the app's Pipelines page, by an agent through the
+    MCP tools, or from outside with the app's trigger secret.</li>
+  <li><strong>A push to GitHub</strong> — <code>{"github": {"events": [...], "branches": [...]}}</code>.</li>
+  <li><strong>The Builder building this app</strong> — <code>{"builder": {"events": ["request.finished",
+    "check.finished"]}}</code>, with what was built, what the check found, or the question a planner
+    asked, in the run's context. A "webhook when a build finishes" is one of these with a single
+    <code>http</code> step.</li>
+  <li><strong>A change in a connected service</strong> — <code>{"connector": {"quickbooks":
+    {"entities": ["Invoice", "Payment"]}}}</code>: the platform receives the provider's notice and
+    starts the pipelines of the app whose company it was. A notice says what changed; the pipeline
+    fetches the record.</li>
+</ul>
+<p>
+  Pipelines live in each app — on its own Pipelines page, next to the data they automate, with the
+  services it is connected to shown alongside.
 </p>
 
 <h2>Scheduling</h2>

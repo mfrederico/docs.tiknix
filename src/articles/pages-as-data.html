@@ -1,0 +1,106 @@
+<p>
+  Ask an AI agent for an admin page and you will get one. It will have a card, a table, a form,
+  three buttons in a row and a success message in green — and the next page it writes will have a
+  slightly different card, a table that scrolls sideways on a phone, and four buttons. Each page is
+  fine. The app is not: nothing reads the same way twice, and the person using it has to work out
+  each screen from scratch.
+</p>
+<p>
+  Tiknix's answer is to take layout away from the page. A page of the app's own says
+  <em>what is on it</em> — its title, the one thing to do there, the rows, the fields — as data, and
+  <code>\app\Ui</code> decides how that looks: spacing, hierarchy, where actions sit, how a list reads
+  on a phone, how a delete is confirmed.
+</p>
+
+<h2>What a page says</h2>
+<pre><code>&lt;?= \app\Ui::page(['title' =&gt; 'Customers', 'lead' =&gt; 'Everyone who has ordered.',
+                   'primary' =&gt; ['label' =&gt; 'Add a customer', 'url' =&gt; '/cafe/customer', 'icon' =&gt; 'plus-lg']]) ?&gt;
+&lt;?= \app\Ui::table(['rows' =&gt; $rows, 'count' =&gt; 'customer',
+    'columns' =&gt; [['label' =&gt; 'Customer', 'value' =&gt; 'name', 'sub' =&gt; 'email', 'url' =&gt; fn($r) =&gt; '/cafe/customer?id=' . $r-&gt;id],
+                  ['label' =&gt; 'Status', 'value' =&gt; 'status', 'as' =&gt; 'badge', 'tones' =&gt; ['active' =&gt; 'success']],
+                  ['label' =&gt; 'Since', 'value' =&gt; 'created_at', 'as' =&gt; 'date', 'quiet' =&gt; true]],
+    'actions' =&gt; fn($r) =&gt; [['label' =&gt; 'Delete', 'post' =&gt; '/cafe/delete', 'fields' =&gt; ['id' =&gt; $r-&gt;id],
+                             'confirm' =&gt; "Delete {$r-&gt;name}? Their orders stay.", 'danger' =&gt; true]],
+    'empty' =&gt; ['title' =&gt; 'No customers yet', 'text' =&gt; 'They appear here after their first order.',
+                'action' =&gt; ['label' =&gt; 'Add a customer', 'url' =&gt; '/cafe/customer']]]) ?&gt;</code></pre>
+<p>
+  There is no <code>&lt;div class="container"&gt;</code>, no card, no hand-written table and no
+  <code>confirm()</code>. The same few calls cover most of an app: <code>Ui::page</code>,
+  <code>Ui::table</code>, <code>Ui::form</code>, <code>Ui::agenda</code> (things that happen at a
+  time), <code>Ui::detail</code> (one record's facts) and <code>Ui::notice</code>.
+</p>
+
+<h2>The rules it holds you to</h2>
+<p>Each is about what a person has to read and decide, not about taste:</p>
+<ul>
+  <li><strong>One primary action per page</strong>, named as a verb with its object — "Add a
+    customer", never "Submit" or "New". Others go in a quieter menu.</li>
+  <li><strong>A list shows what tells rows apart</strong> — at most seven columns. The first names
+    the row and links to it; a second fact goes under it; columns a phone can drop are marked
+    <code>quiet</code>.</li>
+  <li><strong>Things that happen at a time are an agenda, not a table</strong> — grouped by day,
+    Today and Tomorrow in words, soonest first. A date column makes the reader do the grouping.</li>
+  <li><strong>Every list has an empty state</strong> that says what belongs there and how to add
+    the first one.</li>
+  <li><strong>A form asks only what it needs now.</strong> More than eight fields in one run is
+    refused: group them in sections, or fold the rarely-needed ones under "More options". Two to
+    four choices are radio buttons, not a dropdown.</li>
+  <li><strong>Words are the user's, not the schema's</strong> — "Stop showing it at", not
+    <code>expires_at</code>.</li>
+  <li><strong>Something destructive is a POST with a confirmation that says what will be
+    lost.</strong></li>
+</ul>
+<p>
+  A spec that breaks a rule is refused with the fix in the message — an unknown key, a form with
+  ten loose fields, a table with no empty state. That is deliberate: a page that renders wrong
+  quietly is worse than one that refuses loudly, because the loud one gets fixed in the task that
+  wrote it.
+</p>
+
+<h2>Which pages, before any view</h2>
+<p>
+  The harder decision is not how a page looks but which pages a feature needs. The
+  <code>ui_pattern</code> MCP tool answers it from the shape of the data: given a bean (or the
+  columns of one not built yet), it says whether this is a list and a form, a page per record, an
+  agenda by day, a conversation, a single settings form, or a list on its parent's page — which
+  columns tell rows apart, what the form asks up front and what folds away, and the
+  <code>Ui</code> code to start from. The planner calls it before it plans a page.
+</p>
+
+<h2>Hand-made pages still exist</h2>
+<p>
+  A calendar, a chat, a dashboard or a public landing page is not a list, a form or a record, and
+  is written by hand — on the design system's classes and Bootstrap 5.3 (see
+  <a href="/bootstrap-design-primitive.html">Bootstrap as a Design Primitive</a>), still opening with
+  <code>Ui::page()</code>. It says so in one line, <code>// ui: hand-made — a calendar</code>, and the
+  page check stops asking it to be a table.
+</p>
+
+<h2>The check, and the order of work</h2>
+<p>
+  <code>full_validation</code> reports what a view does by hand that <code>Ui</code> decides — a
+  hand-written table or form, two primary buttons, its own flash output, a hard-coded colour, no
+  heading — as warnings on the task that wrote it.
+</p>
+<p>
+  And it fixes the order of work. A feature's first task is its data, rules and routes, with pages
+  built from <code>Ui</code>: correct and usable, and done. How it <em>feels</em> — the order of
+  things, the wording, what is folded away — is its own design task, after the data works, made by
+  looking at the pages in a browser at phone and desktop width.
+</p>
+
+<div class="callout callout-honest">
+  <span class="callout-title">Honest notes</span>
+  <ul>
+    <li><strong>Refusals are 500s.</strong> A spec <code>Ui</code> refuses throws, and in a live page
+      that is an error page until the view is fixed. The page check after every task exists so a
+      refusal is caught in the sandbox, not by a visitor.</li>
+    <li><strong>It is opinionated on purpose.</strong> Seven columns, eight loose fields, one primary
+      button: some pages will want one more. The rule is the default an agent cannot argue its way
+      past, not a law of nature — sections, folded fields and a page per record are the ways
+      through.</li>
+    <li><strong>Every app looks related.</strong> That is the point for the people using it, and a
+      cost for an owner who wants their app to look unlike the others. The palette, type and logo
+      are still theirs.</li>
+  </ul>
+</div>

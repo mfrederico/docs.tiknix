@@ -1,0 +1,120 @@
+<p>
+  Frameworks usually arrive in one of two shapes. Either you install a library and write your app
+  around it, and every upgrade is your problem; or you fork a starter kit, and on the day you start
+  editing it, it stops being upgradable. Neither works when an agent writes most of the code: the
+  agent will happily edit the starter kit, and nobody will notice until the next release cannot be
+  applied.
+</p>
+<p>
+  A Tiknix app is the first shape with a hard line drawn through it. The platform's code — the
+  <strong>runtime</strong> — is a Composer package the app requires. Everything else at the app's
+  root is the app's own. The line is enforced, not suggested.
+</p>
+
+<h2>Two halves of one app</h2>
+<pre><code>vendor/tiknix/runtime/{controls,lib,models,services,mcptools,views,…}   the platform — read-only
+controls/ lib/ models/ services/ mcptools/ views/ routes/                the app's own code
+concepts/ connectors/                                                     installed plugins (read-only too)
+conf/ data/ database/ secure/ log/ public/                               config, data, web root</code></pre>
+<p>
+  The runtime is what every app runs on: routing, the <code>Bean::</code> wrapper over RedBeanPHP,
+  members, sign-in and two-factor, the admin pages, connections, pipelines, the MCP server and its
+  tools, plugins, the page shell, and the agent runner that builds tasks. The app is everything it
+  adds: its controllers, models, pages, seeds, and the menu that links them.
+</p>
+<p>
+  Code finds the two halves by asking, never by counting directories:
+  <code>\app\Paths::root()</code> is the app, <code>\app\Paths::runtime()</code> the runtime. The
+  autoloader, the view resolver, seeds, MCP tools and the agents' guidance all look in the app
+  first, which is what makes the rest of this article work.
+</p>
+
+<h2>A new page is a controller of the app's own</h2>
+<p>
+  The runtime's controllers — <code>Admin</code>, <code>Auth</code>, <code>Member</code>,
+  <code>Settings</code> and the rest — serve URLs the app does not own. A page an app needs, even one
+  a plan names as <code>/admin/customers</code>, is built as <code>controls/Cafe.php</code> serving
+  <code>/cafe/customers</code>, with its permission row seeded and a link from the app's menu. The
+  runtime's pages are reused by linking to them, never by adding a method to them.
+</p>
+
+<h2>Changing what the runtime does</h2>
+<p>In order of preference:</p>
+<ol>
+  <li><strong>Extend it.</strong> The runtime exposes slots — <code>\app\Chrome::add('prepare',
+    'app/nav')</code> adds the app's part of the menu; <code>'footer'</code>, <code>'actions'</code>,
+    <code>'dashboard'</code> and others take parts of the page shell — plus settings, and classes your
+    own code can call. Most changes are one of these.</li>
+  <li><strong>Override it,</strong> only when the runtime's own behaviour must change:
+    <pre><code>php scripts/clitool.php --override=views/admin/index.php</code></pre>
+    copies the file to the same path in the app, records it in <code>overrides.lock</code>, and points
+    the autoloader at the copy. Override the smallest thing that works — a view, not its
+    controller.</li>
+</ol>
+<blockquote>
+  An overridden file is never upgraded again. When a release changes the runtime's copy,
+  <code>--update</code> names the override STALE, and its owner reconciles it.
+</blockquote>
+<p>
+  Copying a runtime file into the app by hand is refused at the keyboard. It would half-work, which
+  is worse than not working: a hand-copied controller is never loaded (the class map still names
+  the runtime's), while a hand-copied view is — so new methods 404 and the view fails on variables
+  nothing passes it.
+</p>
+
+<h2>Updates are releases</h2>
+<p>
+  The runtime is released as git tags. An app pins one in its <code>composer.json</code> and moves
+  with:
+</p>
+<pre><code>php scripts/clitool.php --update</code></pre>
+<p>
+  which installs the release, runs the seeds, names any stale override, and regenerates the agents'
+  guidance. Hosted apps are updated by the platform as releases go out; the busy check comes first,
+  so an app in the middle of a build is not updated under it.
+</p>
+
+<h2>The agents' guidance is generated</h2>
+<p>
+  The rules an agent reads before it touches an app — the file Claude Code reads as
+  <code>CLAUDE.md</code> and other agents as <code>AGENTS.md</code> — are built by
+  <code>clitool --agent-sync</code> from the runtime's <code>agent/guidelines/</code>, plus each enabled
+  plugin's <code>guidelines.md</code>, plus any section the app writes itself in its own
+  <code>agent/guidelines/</code> (an app file with a runtime section's name replaces it). A runtime
+  release can therefore change what every app's agents know — which is how a lesson learned in one
+  project becomes a rule in all of them.
+</p>
+
+<h2>Plugins</h2>
+<p>
+  Features that are optional but shared — e-signatures, a CRM, a lead machine — are
+  <strong>concepts</strong>: plugins installed from a catalog into <code>concepts/&lt;name&gt;/</code>
+  and recorded in <code>concepts.lock</code>. They are read-only for the same reason the runtime is: an
+  app adapts a plugin through its slots, settings and classes, from its own code, so the plugin can
+  be updated. A plugin never names a provider; it declares a role (<em>mail</em>, <em>payments</em>)
+  and the app binds that role to one of its connections.
+</p>
+
+<h2>Data and code stay apart</h2>
+<p>
+  What the app writes while it runs lives under <code>data/</code>, <code>database/</code>,
+  <code>secure/</code>, <code>log/</code> and similar; never under <code>controls/</code>,
+  <code>lib/</code> or <code>views/</code>. Code changes are commits. Tables and permission rows ship
+  as seeds in <code>services/Schema/Seeds/</code> (an app's own from number 50 up) — and a seed is
+  for what the app needs, never for one owner's records.
+</p>
+
+<div class="callout callout-honest">
+  <span class="callout-title">Honest notes</span>
+  <ul>
+    <li><strong>An override is a fork of one file.</strong> It is the right tool when you need it,
+      and it is debt from the day you take it: every release that touches that file is yours to
+      reconcile.</li>
+    <li><strong>The runtime is still moving fast.</strong> Releases are frequent and numbered as
+      pre-releases. Hosted apps take them automatically; a self-hosted app should read what changed
+      before it updates.</li>
+    <li><strong>Slots exist where someone needed them.</strong> When the runtime has no slot for
+      what you want to change, the honest options are an override or asking for a slot — not a
+      clever workaround in a view.</li>
+  </ul>
+</div>

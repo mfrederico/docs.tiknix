@@ -1,0 +1,118 @@
+<p>
+  Sooner or later an app has to do something it cannot do on its own disk: send an email, keep a
+  photo, play a video, text a code to a phone, post an invoice to the books. Each is an outside
+  service with its own account, its own credentials, its own ways of failing — and each is a place
+  where generated code tends to take a shortcut: a key in a config file, a file "temporarily" on
+  local disk, a send that returns <code>true</code> whether or not anything was sent.
+</p>
+<p>
+  In Tiknix each of these is a <strong>connection</strong> the project's owner makes once, under
+  Connections, and a small runtime class the app's code calls. The class reads the connection; the
+  code never sees a credential. And every one of them treats <em>not connected</em> as a normal
+  state with its own answer, never as a reason to fall back to something that only looks like it
+  worked.
+</p>
+
+<h2>Email: <code>Mailer</code></h2>
+<pre><code>Mailer::create()-&gt;to($email, $name)-&gt;subject($s)-&gt;send($html);
+Mailer::sendPasswordReset($email, $name, $resetUrl);</code></pre>
+<p>
+  Mail goes through the app's Mailgun connection. With none, <code>Mailer::isConfigured()</code> is
+  false and <code>send()</code> logs an error naming the fix and returns false — so a page can say
+  "email is not set up" instead of "sent". Mail settings are never read from an ini file. A site of
+  the app can send from its own address.
+</p>
+
+<h2>Files people upload: <code>Storage</code></h2>
+<p>
+  Photos, audio and documents go to the app's S3-compatible bucket (Wasabi, AWS, R2, Backblaze,
+  DigitalOcean), never to the app's disk — the disk is small and is rebuilt. The code says
+  <em>who</em> may see a file, and the key it gets back records it:
+</p>
+<pre><code>$key = Storage::putFile('avatars/' . Storage::name($upload), $tmp, Storage::PUBLIC_, $mime);   // anyone with the link
+$key = Storage::putFile('records/' . $memberId . '/' . Storage::name($name), $tmp, Storage::PRIVATE_, $mime);
+$record-&gt;photoKey = $key;          // store the KEY, never a URL
+Storage::url($key);                 // a private file: a link that works for 15 minutes</code></pre>
+<p>
+  Public files open by their plain link; private ones only through <code>Storage::url()</code>,
+  which the code calls only after deciding this person may see the file. Anything about one person
+  — a health record, an invoice, a message attachment — is private. Keys are built by the class,
+  under the site's own address, so two domains of one app can share a bucket without colliding.
+</p>
+
+<h2>Video: <code>Video</code></h2>
+<p>
+  A phone's recording does not play in every browser and is far too big to serve as it came. Video
+  goes to a Bunny Stream library, which converts it, keeps a size for each screen and makes the
+  thumbnail. The file never passes through the app: the browser uploads it straight to the library
+  (the tus protocol), and the app keeps only its id.
+</p>
+<pre><code>$up = Video::start($title);                   // where the browser sends the file
+$v  = Video::info($post-&gt;videoEid);            // waiting | processing | ready | failed, with progress
+if ($v['state'] === 'ready') echo Video::embed($post-&gt;videoEid);</code></pre>
+<p>
+  A video is not ready the moment it is uploaded, and a page says so until it is. Who may watch is
+  the app's decision, made before the player address is built — that address is signed and works
+  for an hour.
+</p>
+
+<h2>Text messages: <code>Sms</code></h2>
+<pre><code>$to = Sms::e164($profile-&gt;phone, '1');     // what a person typed → +15551234567
+Sms::send($to, "Your code is 482913. It works for 10 minutes.");</code></pre>
+<p>
+  Texts go from the business's own number (a Quo connection) and cost money per part —
+  <code>Sms::parts()</code> says how many a message is. They are for codes, links back into an
+  account, and notices a person asked for; not marketing. A code sent by text is a key to the
+  account, so the guidance is specific: store only its hash, make it short-lived and single-use,
+  limit tries, and answer the same whether or not the number belongs to anyone. "Queued" means the
+  service took it, not that the phone has it.
+</p>
+
+<h2>Accounting: QuickBooks Online</h2>
+<p>
+  A person connects their QuickBooks company under Connections; the app then calls it through
+  <code>ConnectorCall</code>:
+</p>
+<pre><code>ConnectorCall::call('quickbooks', 'query', ['environment' =&gt; 'development',
+    'query' =&gt; "SELECT * FROM Customer WHERE PrimaryEmailAddr = 'a@b.com'"]);</code></pre>
+<p>
+  Unlike most connectors, customers never create an app of their own: one Tiknix app at Intuit
+  serves everyone. The sign-in happens on the platform, which hands the company's access to the
+  project, sealed with the project's own key. Access expires every hour and is renewed through an
+  ordinary authenticated call to the platform — which adds Intuit's secret and keeps nothing — so
+  the app never holds that secret at all. Changes in QuickBooks (an invoice paid, a customer
+  edited) arrive as notices the platform routes to the right project, where they can start a
+  pipeline:
+</p>
+<pre><code>"trigger": { "connector": { "quickbooks": { "entities": ["Invoice", "Payment"], "operations": ["Create", "Update"] } } }</code></pre>
+
+<h2>The shape they share</h2>
+<table>
+  <thead><tr><th>Rule</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td>Credentials live in the connection, sealed with the app's key</td><td>Code, commits and agents never see them</td></tr>
+    <tr><td>Not connected is a legitimate state</td><td>The page says so; nothing pretends to have worked</td></tr>
+    <tr><td>A refusal throws with the service's own reason</td><td>It reaches the log and the person, instead of becoming an empty value</td></tr>
+    <tr><td>Store ids and keys, build links when shown</td><td>A stored URL outlives the permission that made it</td></tr>
+    <tr><td>Files and mail follow the site</td><td>Two domains of one app keep their files apart and can send from their own addresses</td></tr>
+  </tbody>
+</table>
+<p>
+  A build task's sandbox has no connections at all — it must not send mail or charge a card — so
+  tasks test the "not connected" path, and the check after the build sees the real one.
+</p>
+
+<div class="callout callout-honest">
+  <span class="callout-title">Honest notes</span>
+  <ul>
+    <li><strong>QuickBooks is on Intuit's sandbox companies today.</strong> Live companies need
+      Tiknix's app to pass Intuit's review first. Every call names its environment, so the change
+      is a connection, not code.</li>
+    <li><strong>Each service is one provider today.</strong> Mail is Mailgun, video is Bunny Stream,
+      texts are Quo. The class is the boundary, so another provider is a connector, not an app
+      rewrite — but it has to be written.</li>
+    <li><strong>Leaving the platform has a cost for QuickBooks.</strong> An app moved off Tiknix keeps
+      renewing through it while its account is active; leaving entirely means its own Intuit app and
+      reconnecting.</li>
+  </ul>
+</div>

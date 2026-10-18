@@ -6,7 +6,7 @@
   design decisions stay yours.
 </p>
 <p>
-  Tiknix uses Bootstrap 5.3 plus Bootstrap Icons, and then spends about 140 lines redefining what
+  Tiknix uses Bootstrap 5.3 plus Bootstrap Icons, and then spends a few hundred lines of CSS redefining what
   those components look like. The result reads as a designed product, not a Bootstrap demo, and the
   mechanism is worth copying.
 </p>
@@ -171,6 +171,15 @@
   codebase where agents write views: the more standard your component vocabulary, the better the
   generated markup, and the more of your identity you can push into variables the generated markup
   already reads.
+</p>
+<p>
+  It is also where Tiknix went one step further. Correct markup per element is not the same as a
+  coherent app: an agent that writes a good card on every page still writes a slightly different
+  card on every page. So for an app's ordinary pages — lists, forms, records — the agent no longer
+  writes Bootstrap at all. It describes the page as data and <code>\app\Ui</code> writes the
+  markup, on this same token layer (see <a href="/pages-as-data.html">Pages as Data</a>). Bootstrap
+  and the house classes in this article remain the vocabulary for everything <code>Ui</code> does
+  not cover: dashboards, calendars, chats, landing pages.
 </p>
 
 <div class="callout callout-honest">
