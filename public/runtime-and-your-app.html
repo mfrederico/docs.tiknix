@@ -178,6 +178,23 @@ conf/ data/ database/ secure/ log/ public/                               config,
   and the app binds that role to one of its connections.
 </p>
 
+<h2>Your code, in your own repository</h2>
+<p>
+  An app's history is a git repository, and it can be kept in step with one on GitHub, both ways
+  (Deploy → GitHub repository). Each request is opened there as a pull request — what was asked,
+  the tasks it became, what the check found — and merged at once, so the branch always equals
+  the live app and the pull request is the record. What you push to that branch yourself comes
+  back into the app: a restore point first, then a fast-forward or a merge made as you, its
+  packages and seeds, and an entry in Ask checked like any request. A conflict is never settled by
+  guessing: the app is left as it was, and its side is put on a <code>tiknix/app</code> branch for
+  you to merge on GitHub.
+</p>
+<p>
+  The platform makes a deploy key and keeps it sealed, with the token that opens pull requests;
+  neither ever enters the app's container. Nothing that must stay private — a database, a real
+  config, a key — is pushed or pulled; a history that holds one is refused, with the files named.
+</p>
+
 <h2>Data and code stay apart</h2>
 <p>
   What the app writes while it runs lives under <code>data/</code>, <code>database/</code>,
